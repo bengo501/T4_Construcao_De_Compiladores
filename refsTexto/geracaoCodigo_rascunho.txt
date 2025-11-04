@@ -1,0 +1,358 @@
+GERAÇÃO DE CÓDIGO  
+Alexandre Agustini  
+Politécnica / PUCRS  
+
+Rascunho  
+
+---
+
+### Geração de código — Objetivo
+
+Gerar um código equivalente ao programa-fonte em uma linguagem de máquina ou de montagem, de acordo com a arquitetura onde será executado o programa.  
+
+**Tarefas:**
+- Reservar espaço para variáveis  
+- Alocar o uso dos registradores da máquina  
+- Gerar código para as construções da linguagem  
+
+---
+
+### Geração de código — Código intermediário
+
+A geração de código é apresentada utilizando-se um **código intermediário**.  
+Essa abordagem apresenta várias vantagens:
+
+- Facilita o transporte entre diferentes máquinas.  
+- Permite o uso de otimizadores de código independentes.  
+- Não exige conhecimento detalhado da arquitetura alvo.  
+
+**Representações comuns:**
+- Árvores sintáticas (abstratas)  
+- Máquinas virtuais de pilha  
+- Máquinas virtuais com código de três endereços  
+
+Neste material é utilizada a notação de uma **máquina de pilha**, apresentada e estendida conforme a necessidade.  
+
+---
+
+### Declarações (Globais)
+
+- Reservam espaço para as variáveis.  
+- Incluem o endereço na Tabela de Símbolos.  
+
+**Observação:**  
+Como estamos gerando uma linguagem de montagem, podemos considerar:  
+**endereço = rótulo (nome da posição de memória)**  
+
+**Alternativas para nomes internos gerados pelo compilador:**
+1. Extrair do nome das variáveis no programa-fonte (ex.: `_idade`)  
+2. Gerar internamente (ex.: `V001`, `V002`, ...)
+
+---
+
+### Declarações (2)
+
+**Procedimentos auxiliares:**
+- `InclTS(id, rotVar, tam)` — insere na Tabela de Símbolos o identificador, rótulo e tamanho.  
+- `rotVar := novoRotVar()` — gera novos rótulos para variáveis (`V001`, `V002`, ...).  
+- `geraCod(...)` — gera uma linha de código objeto.  
+
+**Pseudo-instruções:**
+- `DS N` — reserva N posições a partir do endereço atual.  
+- `DC N` — armazena N no endereço corrente e reserva essa posição.  
+- `JMP N` — desvia para endereço N.  
+- `NOP` — não faz nada.  
+
+---
+
+### Declarações (3)
+
+Prog → { geraCod('JMP _start') }
+
+Decl { geraCod('_start: NOP') }
+
+Decl → Decl id : Tipo ;
+{ temp = novoRotVar();
+inclTS(id.val, temp, Tipo.tam);
+geraCod(temp, 'DS', Tipo.tam); }
+
+Tipo → INTEGER { Tipo.tam = 4 }
+| DOUBLE { Tipo.tam = 8 }
+| array [num] of Tipo1 { Tipo.tam = Tipo1.tam * num.valor }
+
+
+---
+
+### Declarações — Exemplo
+
+**Programa:**
+
+a : integer;
+v : array [5] of integer;
+
+
+**Código gerado:**
+
+JMP _start
+_a DS 4
+_v DS 20
+_start: NOP
+
+
+---
+
+### Expressões e Atribuição
+
+**Procedimentos auxiliares:**
+- `pesqRotTS(ID)` — pesquisa na tabela de símbolos o rótulo associado ao identificador.  
+
+**Instruções:**
+- `LDA N` — empilha o conteúdo do endereço N.  
+- `STA N` — desempilha o valor e armazena no endereço N.  
+- `LDC N` — empilha a constante N.  
+- `ADD` — desempilha RT1 e RT2 e empilha RT2 + RT1.  
+- `MUL` — desempilha RT1 e RT2 e empilha RT2 × RT1.  
+
+**Gramática:**
+
+Cmdo → id := Exp
+{ rotVar := pesqRotTS(id.val);
+geraCod('STA', rotVar); }
+
+Exp → id { rotVar := pesqRotTS(id.val); geraCod('LDA', rotVar); }
+| num { geraCod('LDC', num.val); }
+| Exp + Exp { geraCod('ADD'); }
+| Exp * Exp { geraCod('MUL'); }
+| ( Exp ) { }
+
+
+**Exemplo:**
+
+x := 3 + 4 * 5
+LDC 3
+LDC 4
+LDC 5
+MUL
+ADD
+STA _x
+
+
+---
+
+### Comandos de Controle
+
+**Procedimentos auxiliares:**
+- `novoRotCod()` — gera novos rótulos de código (`R001`, `R002`, ...).  
+
+**Instruções:**
+- `JZER N` — desempilha e, se o valor for zero, desvia para N.  
+- `JPOS N` — desempilha e, se for positivo, desvia para N.  
+- `GRT` — desempilha RT1 e RT2; empilha 1 se RT2 > RT1, senão 0.  
+- `LES` — desempilha RT1 e RT2; empilha 1 se RT2 < RT1, senão 0.  
+- `EQ` — desempilha RT1 e RT2; empilha 1 se RT2 == RT1, senão 0.  
+
+---
+
+### Comandos de Controle (2)
+
+Cmdo → IF { pRot.push(proxRot); proxRot += 2; }
+Exp { geraCod('JZER', pRot.peek()); }
+THEN Cmdo { geraCod('JMP', pRot.peek()+1);
+geraCod(pRot.peek(), ':NOP'); }
+ELSE Cmdo { geraCod(pRot.peek()+1, ':NOP');
+pRot.pop(); }
+
+  | WHILE { pRot.push(proxRot); proxRot += 2;
+            geraCod(pRot.peek(), ':NOP'); }
+     Exp { geraCod('JZER', pRot.peek()+1); }
+     DO Cmdo { geraCod('JMP', pRot.peek());
+                geraCod(pRot.peek()+1, ':NOP');
+                pRot.pop(); }
+
+
+**Estrutura de controle de rótulos:**
+
+Stack<Integer> pRot = new Stack<Integer>();
+int proxRot = 1;
+
+
+---
+
+### Comandos de Controle — Exemplo
+
+**Exemplo:**
+
+while (a > 0)
+if (a % 2 == 0)
+a = a / 2;
+else
+a = a - 1;
+
+
+**Código gerado:**
+
+R001: NOP
+LDA _a
+LDC 0
+GRT
+JZER R002
+LDA _a
+LDC 2
+MOD
+LDC 0
+EQ
+JZER R003
+LDA _a
+LDC 2
+DIV
+STA _a
+JMP R004
+R003: NOP
+LDA _a
+LDC 1
+SUB
+STA _a
+R004: NOP
+JMP R001
+R002: NOP
+
+
+---
+
+### Procedimentos não-locais
+
+**Problema:**  
+Na geração de código de procedimentos (possivelmente recursivos), onde alocar espaço para variáveis locais e parâmetros?
+
+**Solução:**  
+Utiliza-se um **registro de ativação**, um bloco criado para cada ativação de procedimento, contendo:  
+- Variáveis locais;  
+- Parâmetros;  
+- Informações de controle.  
+
+---
+
+### Registro de Ativação
+
+Para cada chamada de procedimento:
+
+**Na entrada:**
+- Empilha o endereço de retorno;  
+- Salva o BP antigo;  
+- Ajusta o novo BP;  
+- Aloca espaço para variáveis.  
+
+**Na saída:**
+- Desaloca espaço das variáveis;  
+- Restaura o BP;  
+- Retorna desempilhando o valor de retorno.  
+
+**Arquitetura requer:**
+- `SP` — stack pointer (topo da pilha)  
+- `BP` — base pointer (início do registro)  
+
+Variáveis locais são acessadas via deslocamento em relação ao BP.  
+
+---
+
+### Subprogramas
+
+**Instruções:**
+- `AMEM N` — aloca N palavras na pilha (`SP := SP + N`)  
+- `DMEM N` — desaloca N palavras (`SP := SP - N`)  
+- `SETBP` — faz BP apontar para o topo da pilha  
+- `PUSHBP` — empilha o valor atual de BP  
+- `POPBP` — desempilha e restaura BP  
+- `LDO N` — empilha conteúdo de `BP + N`  
+- `STO N` — desempilha e armazena em `BP + N`  
+- `DROP` — desempilha uma palavra  
+
+---
+
+### Subprogramas — Exemplo
+
+**Programa:**
+
+Procedure P
+var x, a, b, c
+...
+end
+
+
+**Código gerado:**
+
+P: NOP
+PUSHBP
+SETBP
+AMEM 4
+x := z
+LDA 500
+STO 1
+p
+JSR P
+a := x * z
+LDO 1
+LDA 500
+MUL
+STO 2
+DMEM 4
+POPBP
+RTS
+
+
+---
+
+### Parâmetros por valor
+
+Parâmetros são colocados no topo da pilha e acessados por **deslocamentos negativos** em relação ao BP.
+
+**Exemplo:**
+
+
+Procedure p(t: integer);
+var a: integer;
+...
+t := a * 3
+
+
+**Código:**
+
+LDO 1 (BP+1 = 'a')
+LDC 3
+MUL
+STO -2 (BP-2 = 't', primeiro parâmetro)
+
+
+---
+
+### Parâmetros por referência
+
+Em parâmetros por referência, empilha-se **o endereço** dos parâmetros reais, e não seus valores.
+
+**Instruções adicionais:**
+- `LDI` — desempilha RT1 e empilha o valor no endereço RT1.  
+- `STI` — desempilha RT1 e RT2 e armazena RT1 no endereço RT2.  
+
+**Exemplo:**
+
+Procedure p(var r: integer; v: integer);
+...
+r := r * v
+
+
+**Código:**
+
+LDO -2
+LDO -2
+LDI
+LDO -3
+MUL
+STI
+
+
+---
+
+**FIM — GERAÇÃO DE CÓDIGO (RASCUNHO)**  
+Alexandre Agustini – PUCRS
+
+

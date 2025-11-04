@@ -1,0 +1,275 @@
+CSCI0330 Intro Computer Systems — Doeppner  
+
+x64 Cheat Sheet  
+Fall 2019  
+
+---
+
+### 1. x64 Registers  
+
+x64 assembly code uses sixteen 64-bit registers. Additionally, the lower bytes of some of these registers may be accessed independently as 32-, 16-, or 8-bit registers. The register names are as follows:  
+
+| 8-byte | Bytes 0–3 | Bytes 0–1 | Byte 0 |
+|---------|------------|-----------|--------|
+| %rax | %eax | %ax | %al |
+| %rcx | %ecx | %cx | %cl |
+| %rdx | %edx | %dx | %dl |
+| %rbx | %ebx | %bx | %bl |
+| %rsi | %esi | %si | %sil |
+| %rdi | %edi | %di | %dil |
+| %rsp | %esp | %sp | %spl |
+| %rbp | %ebp | %bp | %bpl |
+| %r8 | %r8d | %r8w | %r8b |
+| %r9 | %r9d | %r9w | %r9b |
+| %r10 | %r10d | %r10w | %r10b |
+| %r11 | %r11d | %r11w | %r11b |
+| %r12 | %r12d | %r12w | %r12b |
+| %r13 | %r13d | %r13w | %r13b |
+| %r14 | %r14d | %r14w | %r14b |
+| %r15 | %r15d | %r15w | %r15b |
+
+For more details on register usage, see Section 4.3 “Register Usage” below.  
+
+---
+
+### 2. Operand Specifiers  
+
+Operand specifiers define how operands are interpreted.  
+
+- `Imm` refers to an immediate constant value, e.g. `$48` or `$0x8048d8e`.  
+- `Eₓ` refers to a register, e.g. `%rax`.  
+- `R[Eₓ]` refers to the value stored in register Eₓ.  
+- `M[x]` refers to the value stored at memory address x.  
+
+| Type | From | Operand Value | Name |
+|------|------|----------------|------|
+| Immediate | `$Imm` | Imm | Immediate |
+| Register | `Eₐ` | R[Eₐ] | Register |
+| Memory | `Imm` | M[Imm] | Absolute |
+| Memory | `(Eₐ)` | M[R[Eₐ]] | Absolute |
+| Memory | `Imm(Eᵦ,Eᵢ,s)` | M[Imm + R[Eᵦ] + (R[Eᵢ] × s)] | Scaled Indexed |
+
+---
+
+### 3. x64 Instructions  
+
+Suffixes:  
+- `b`: byte (1 byte)  
+- `w`: word (2 bytes)  
+- `l`: doubleword (4 bytes)  
+- `q`: quadword (8 bytes)  
+
+---
+
+#### 3.1 Data Movement  
+
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| mov S, D | Move source to destination | 171 |
+| push S | Push source onto stack | 171 |
+| pop D | Pop top of stack into destination | 171 |
+| movs / movz | Move with sign/zero extension (two suffixes) | 171 |
+| cwtl | Convert word in %ax → %eax (sign-extended) | 182 |
+| cltq | Convert %eax → %rax (sign-extended) | 182 |
+| cqto | Convert %rax → %rdx:%rax (sign-extended) | 182 |
+
+---
+
+#### 3.2 Arithmetic Operations  
+
+##### 3.2.1 Unary  
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| inc D | Increment by 1 | 178 |
+| dec D | Decrement by 1 | 178 |
+| neg D | Arithmetic negation | 178 |
+| not D | Bitwise complement | 178 |
+
+##### 3.2.2 Binary  
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| leaq S, D | Load effective address | 178 |
+| add S, D | Add source to destination | 178 |
+| sub S, D | Subtract source from destination | 178 |
+| imul S, D | Multiply destination by source | 178 |
+| xor S, D | Bitwise XOR | 178 |
+| or S, D | Bitwise OR | 178 |
+| and S, D | Bitwise AND | 178 |
+
+##### 3.2.3 Shifts  
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| sal/shl k,D | Left shift | 179 |
+| sar k,D | Arithmetic right shift | 179 |
+| shr k,D | Logical right shift | 179 |
+
+##### 3.2.4 Special Arithmetic  
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| imulq S | Signed full multiply %rax × S → %rdx:%rax | 182 |
+| mulq S | Unsigned full multiply %rax × S → %rdx:%rax | 182 |
+| idivq S | Signed divide %rdx:%rax ÷ S → quotient %rax, remainder %rdx | 182 |
+| divq S | Unsigned divide %rdx:%rax ÷ S → quotient %rax, remainder %rdx | 182 |
+
+---
+
+#### 3.3 Comparison and Test  
+
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| cmp S2, S1 | Set condition codes for S1 − S2 | 185 |
+| test S2, S1 | Set condition codes for S1 & S2 | 185 |
+
+---
+
+#### 3.4 Accessing Condition Codes  
+
+##### 3.4.1 Conditional Set  
+
+| Instruction | Description | Code | Page |
+|--------------|--------------|------|------|
+| sete/setz D | Set if equal/zero | ZF | 187 |
+| setne/setnz D | Set if not equal/nonzero | ~ZF | 187 |
+| sets D | Set if negative | SF | 187 |
+| setns D | Set if nonnegative | ~SF | 187 |
+| setg/setnle D | Set if greater (signed) | ~(SF^OF)&~ZF | 187 |
+| setge/setnl D | Set if ≥ (signed) | ~(SF^OF) | 187 |
+| setl/setnge D | Set if less (signed) | SF^OF | 187 |
+| setle/setng D | Set if ≤ (signed) | (SF^OF)|ZF | 187 |
+| seta/setnbe D | Set if above (unsigned) | ~CF&~ZF | 187 |
+| setb/setnae D | Set if below (unsigned) | CF | 187 |
+
+##### 3.4.2 Jump  
+
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| jmp label | Unconditional jump | 189 |
+| je/jz label | Jump if equal/zero | 189 |
+| jne/jnz label | Jump if not equal/nonzero | 189 |
+| js/jns label | Jump if sign/!sign | 189 |
+| jg/jnle label | Jump if greater | 189 |
+| jl/jnge label | Jump if less | 189 |
+| ja/jnbe label | Jump if above (unsigned) | 189 |
+| jb/jnae label | Jump if below (unsigned) | 189 |
+
+##### 3.4.3 Conditional Move  
+
+| Instruction | Description | Code | Page |
+|--------------|--------------|------|------|
+| cmove/cmovz S,D | Move if equal | ZF | 206 |
+| cmovne/cmovnz S,D | Move if not equal | ~ZF | 206 |
+| cmovg/cmovnle S,D | Move if greater | ~(SF^OF)&~ZF | 206 |
+| cmovl/cmovnge S,D | Move if less | SF^OF | 206 |
+| cmova/cmovnbe S,D | Move if above | ~CF&~ZF | 206 |
+| cmovb/cmovnae S,D | Move if below | CF | 206 |
+
+---
+
+#### 3.5 Procedure Call Instructions  
+
+| Instruction | Description | Page |
+|--------------|--------------|------|
+| call label | Push return address and jump | 221 |
+| call *op | Push return address and jump indirect | 221 |
+| leave | Set %rsp=%rbp; pop into %rbp | 221 |
+| ret | Pop return address and jump | 221 |
+
+---
+
+### 4. Coding Practices  
+
+#### 4.1 Commenting  
+
+Each function should start with a comment describing purpose and arguments. Inline comments in pseudocode are encouraged for clarity.  
+
+#### 4.2 Arrays  
+
+Arrays are contiguous memory blocks. Indexing formula:  
+`address = base + (index × element_size)`  
+
+Example:  
+If `arr` in `%rax`, and index `i` in `%rcx`:  
+`movq $3, (%rax, %rcx, 8)`  
+stores the value 3 in `arr[i]` (8-byte ints).  
+
+#### 4.3 Register Usage  
+
+Caller-save registers: `%rax, %rcx, %rdx, %rdi, %rsi, %rsp, %r8–r11`  
+Callee-save registers: `%rbx, %rbp, %r12–r15`  
+Return value in `%rax` (≤ 64 bits).  
+First six arguments in `%rdi, %rsi, %rdx, %rcx, %r8, %r9`; extras on the stack.  
+
+#### 4.4 Stack Organization and Function Calls  
+
+##### 4.4.1 Calling a Function  
+
+Example calling `foo(1,15)`:
+
+movq $1, %rdi
+movq $15, %rsi
+call foo
+
+Return value in `%rax`.
+
+##### 4.4.2 Writing a Function  
+
+A function must create and destroy its **stack frame**.
+
+**Prologue**:
+
+pushq %rbx
+pushq %r12
+pushq %r13
+subq $0x18, %rsp
+
+
+**Epilogue**:
+
+addq $0x18, %rsp
+popq %r13
+popq %r12
+popq %rbx
+ret
+
+
+##### 4.4.3 Dynamic Stack Allocation  
+
+When stack frame size varies dynamically, save `%rbp` and use it as a base pointer:  
+
+
+pushq %rbp
+movq %rsp, %rbp
+...
+movq %rbp, %rsp
+popq %rbp
+ret
+
+
+Or use `leave` instruction (sets `%rsp = %rbp; pop %rbp`).  
+
+Dynamic allocation example:
+
+pushq %rbp
+movq %rsp, %rbp
+pushq %rbx
+pushq %r12
+subq $0x18, %rsp
+call rand
+andq $0xF8, %rax
+subq %rax, %rsp
+movq (%rbp), %r12
+movq 0x8(%rbp), %rbx
+movq %rbp, %rsp
+popq %rbp
+ret
+
+
+This mimics the behavior of `alloca()` in C.
+
+---
+
+**End of x64 Cheat Sheet**
+
+
+
+

@@ -1,0 +1,283 @@
+CS143 Handout 19  
+Summer 2008 August 01, 2008  
+
+Final Code Generation  
+Handout written by Maggie Johnson and revised by Julie Zelenski and Jerry Cain.  
+
+The last phase of the compiler to run is the final code generator. Given an intermediate representation of the source program, it produces as output an equivalent program in the target's machine language. This step can range from trivial to complex, depending how high or low-level the intermediate representation is and what information it contains about the target machine and runtime environment. How aggressively optimized the final result is also makes a big difference.  
+
+Unlike all our previous tasks, this one is very machine-specific, since each architecture has its own set of instructions and peculiarities that must be respected. The ABI or application binary interface specifies the rules for executable programs on an architecture (instructions, register usage, calling conventions, instruction scheduling, memory organization, executable format, and so on) and these details direct the code generation. The final code generator handles locations of variables and temporaries and generates all the code to maintain the runtime environment, set up and return from function calls, manage the stack and so on.  
+
+---
+
+### MIPS R2000/R3000 assembly  
+
+The target language for Decaf is MIPS R2000/R3000 assembly. We chose this because it allows us to use SPIM, an excellent simulator for the MIPS processor. The SPIM simulator reads MIPS assembly instructions from a file and executes them on a virtual MIPS machine. It was written by James Larus of the University of Wisconsin, and gracefully distributed for non-commercial use free of charge. (By the way, SPIM is "MIPS" backwards. ☺)
+
+---
+
+### MIPS registers
+
+The processor has 32 word-sized registers (32 bits each). Some have special uses, others are general-purpose:
+
+| Register | Purpose |
+|-----------|----------|
+| zero | holds constant 0 |
+| at | reserved for assembler |
+| v0–v1 | used to return function results |
+| a0–a3 | used to pass first 4 function arguments |
+| t0–t9 | general purpose (caller-saved) |
+| s0–s7 | general purpose (callee-saved) |
+| k0–k1 | reserved for OS |
+| gp | global pointer |
+| sp | stack pointer |
+| fp | frame pointer |
+| ra | return address |
+
+All MIPS data operations are **register-to-register**, with **load/store** being the only memory operations.
+
+---
+
+### Example instructions
+
+li $t0, 12 # Load constant 12 into $t0
+lw $t0, -4($fp) # Load word at address $fp-4 into $t0
+sw $t0, 8($sp) # Store word from $t0 into $sp+8
+add $t0, $t1, $t2 # Add $t1 + $t2 → $t0
+addiu $t0, $t1, 4 # Add $t1 + 4 → $t0
+or $t0, $t1, $t2 # Bitwise OR
+seq $t0, $t1, $t2 # Set $t0=1 if equal, else 0
+b label # Branch to label
+beqz $t1, label # Branch if $t1 == 0
+jal label # Jump and link (call function)
+jr $ra # Return from function
+
+
+MIPS uses **c(rx)** addressing: offset `c` from register `rx`, e.g., `4($sp)`.
+
+---
+
+### Address space layout
+
+High memory
+Stack (grows down)
+Heap (grows up)
+Static data
+Text (code)
+Low memory
+
+
+- **Text segment:** program instructions, labeled and assembled.
+- **Static data segment:** global/static variables and constants.
+- **Heap:** runtime-allocated memory (via `malloc`/`new`).
+- **Stack:** call frames and local variables.
+
+The SPIM simulator enforces valid memory access (unmapped regions cause errors).
+
+---
+
+### Stack frame layout (SPIM convention)
+
+Stack frames contain:
+
+1. Saved `$fp` (previous frame pointer)
+2. Saved `$ra` (return address)
+3. Function parameters (positive offsets)
+4. Local variables (negative offsets)
+5. Temporaries and spills
+
+The **stack grows down**, `$fp` marks the base, `$sp` the top (next free word).
+
+---
+
+### Calling conventions
+
+**Caller:**
+1. Save caller-saved registers  
+2. Push arguments right-to-left  
+3. Execute `jal` to function  
+
+**Callee:**
+4. Save `$fp` and `$ra`  
+5. Set new `$fp`  
+6. Allocate space for locals  
+7. Execute body  
+8. Place return value in `$v0`  
+9. Restore registers and frame  
+10. `jr $ra`
+
+**After return:**
+- Caller removes parameters and restores registers.
+
+---
+
+### Register usage and spilling
+
+Registers are limited. To manage them efficiently:
+
+- **Slaving:** keep frequently used variables in registers.
+- **Spilling:** when all registers are used, write one back to memory to free it.
+
+Heuristic:
+1. Prefer an existing register holding the variable.
+2. Else use an empty register.
+3. Else spill the least recently used or safe register.
+
+---
+
+### Code generator example (from `mips.cc`)
+
+```cpp
+Mips::Register Mips::GetRegister(Location *var, Reason reason) {
+    Register reg;
+    if (!FindRegisterWithContents(var, reg)) {
+        if (!FindRegisterWithContents(NULL, reg)) {
+            reg = SelectRegisterToSpill();
+            SpillRegister(reg);
+        }
+        regs[reg].decl = var;
+        if (reason == ForRead) {
+            const char *base =
+                var->GetSegment() == fpRelative ? regs[fp].name : regs[gp].name;
+            Emit("lw %s, %d(%s)", regs[reg].name, var->GetOffset(), base);
+            regs[reg].isDirty = false;
+        }
+    }
+    if (reason == ForWrite)
+        regs[reg].isDirty = true;
+    return reg;
+}
+
+
+Emitting load and function prologue
+
+void Mips::EmitLoadConstant(Location *dst, int val) {
+    Register reg = GetRegisterForWrite(dst);
+    Emit("li %s, %d", regs[reg].name, val);
+}
+
+void Mips::EmitBeginFunction(int frameSz) {
+    Emit("subu $sp, $sp, 8");
+    Emit("sw $fp, 8($sp)");
+    Emit("sw $ra, 4($sp)");
+    Emit("addiu $fp, $sp, 8");
+    if (frameSz != 0)
+        Emit("subu $sp, $sp, %d", frameSz);
+}
+
+
+Example 1 – Hello World
+
+Decaf code:
+
+void main() {
+    Print("hello world");
+}
+
+TAC (Three-Address Code):
+
+BeginFunc 4;
+_tmp0 = "hello world";
+PushParam _tmp0;
+LCall _PrintString;
+PopParams 4;
+EndFunc;
+
+
+MIPS Assembly:
+
+.text
+.align 2
+.globl main
+main:
+  subu $sp, $sp, 8
+  sw $fp, 8($sp)
+  sw $ra, 4($sp)
+  addiu $fp, $sp, 8
+  subu $sp, $sp, 4
+  .data
+  _string1: .asciiz "hello world"
+  .text
+  la $t0, _string1
+  subu $sp, $sp, 4
+  sw $t0, 4($sp)
+  jal _PrintString
+  add $sp, $sp, 4
+  move $sp, $fp
+  lw $ra, -4($fp)
+  lw $fp, 0($fp)
+  jr $ra
+
+
+Example 2 – Function and global variable
+
+int num;
+
+int Binky(int a, int b) {
+    int c;
+    c = a + b;
+    return c;
+}
+
+void main() {
+    num = Binky(4, 10);
+    Print(num);
+}
+
+
+Generated MIPS assembly includes BeginFunc, PushParam, and LCall instructions, translating directly into subu, sw, li, and jal operations.
+
+Example 3 – Conditional branch
+
+void main() {
+    int a;
+    if (3 == 12)
+        a = 1;
+}
+
+Generates seq, beqz, and label _L0 to control flow.
+
+Example 4 – Classes and dynamic dispatch
+
+Decaf class:
+
+class Cow {
+    int height;
+    int weight;
+    void InitCow(int h, int w) { height = h; weight = w; }
+    void Moo() { Print("Moo!\n"); }
+}
+
+void main() {
+    Cow betsy;
+    betsy = New(Cow);
+    betsy.InitCow(-5, 22);
+    betsy.Moo();
+}
+
+MIPS code allocates space (jal _Alloc), sets up vtable pointer, pushes parameters, and uses jalr for virtual method dispatch.
+Each method (_Cow.InitCow, _Cow.Moo) is implemented with its own function prologue and jr $ra return.
+At the end, the class vtable is emitted as:
+
+.data
+.align 2
+Cow:
+  .word _Cow.InitCow
+  .word _Cow.Moo
+.text
+
+
+Bibliography
+
+Aho, Sethi, Ullman — Compilers: Principles, Techniques, and Tools, Addison-Wesley, 1986.
+
+Bennett — Introduction to Compiling Techniques, McGraw-Hill, 1990.
+
+Larus — Assemblers, Linkers, and the SPIM Simulator, 1998.
+
+Patterson, Hennessy — Computer Organization & Design: The Hardware/Software Interface, 1994.
+
+Muchnick — Advanced Compiler Design and Implementation, Morgan Kaufmann, 1997.
+
+Pyster — Compiler Design and Construction, Van Nostrand Reinhold, 1988.
+

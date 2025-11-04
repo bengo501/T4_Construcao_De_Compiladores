@@ -1,0 +1,248 @@
+OTIMIZAÇÃO DE CÓDIGO  
+Compiladores  
+
+---
+
+Um compilador normalmente possui diversas configurações de otimização  
+(ex: peephole, delayed-branch, etc).  
+
+- gcc 3.3 possui 54 opções de otimização.  
+- gcc 4 tem mais de 100 configurações possíveis.  
+- Desenvolvedores de compiladores costumam incluir combinações de opções, como:  
+  `gcc -O1`, `-O2`, `-O3`.  
+
+**“Optimizing compiler” é um termo enganoso!**  
+A compilação ótima é intratável.  
+O objetivo é **melhorar o desempenho do programa**, não torná-lo perfeito.
+
+---
+
+### Compiler Code Optimizations — Introdução
+
+**Código otimizado:**
+- Executa mais rápido.  
+- Usa memória de forma mais eficiente.  
+- Apresenta melhor desempenho geral.  
+
+Compiladores podem ser projetados para realizar otimização de código.  
+O usuário deve se preocupar apenas com otimizações não fornecidas pelo compilador,  
+como escolher algoritmos mais rápidos e menos intensivos em memória.
+
+---
+
+### Why Compilers Matter
+
+Parte essencial do compilador é **tornar o custo das abstrações razoável**.  
+Ou seja, remover penalidades de desempenho por:
+
+- Uso de objetos.  
+- Verificações de segurança (ex: limites de array).  
+- Código limpo (ex: recursão).  
+
+O compilador usa **análise de programas** para transformar código e melhorar seu desempenho.
+
+---
+
+### Analysis & The Holy Grail
+
+Outros usos importantes da análise de programas:
+
+- Verificação estática de erros.  
+- Detecção de vazamentos de informação.  
+- Prevenção de falhas de segurança.  
+- Suporte ao sistema de tempo de execução (ex: coleta de lixo).  
+- Melhorias adicionais de otimização (ex: localidade de memória).
+
+**“Santo Graal” da pesquisa em compiladores:**
+
+> Programador: escreve um algoritmo simples, O(2^n).  
+> Compilador: transforma em O(n log n) (ou até O(1)!).  
+
+---
+
+### Levels of Analysis
+
+(ordem de complexidade crescente)
+
+| Tipo | Escopo | Características |
+|------|--------|----------------|
+| **Local (single-block)** | Um bloco | Código linear, fácil de analisar, impacto limitado. |
+| **Intraprocedural** | Dentro de uma função | Análise de fluxo de dados e dependências. |
+| **Interprocedural** | Entre funções | Análise de programa completo. Muito intensiva em tempo e memória. Difícil em linguagens como Java. |
+
+---
+
+### Optimization = Analysis + Transformation
+
+**Análises principais:**
+- Controle de fluxo (if, loops, chamadas).  
+- Fluxo de dados (definições e usos de variáveis).  
+
+**Representações comuns:**
+- Grafo de fluxo de controle (CFG).  
+- Grafo de dependência de controle.  
+- Cadeias Def/Use e Use/Def.  
+- SSA (Static Single Assignment).
+
+---
+
+### O papel do Otimizador
+
+O **otimizador de código** atua entre o front-end e o gerador de código.  
+Ele trabalha sobre o **código intermediário**, realizando:
+
+- Análise de fluxo de controle.  
+- Análise de fluxo de dados.  
+- Transformações que melhoram o código intermediário.  
+
+---
+
+### Tipos de Otimizações de Código
+
+Otimizadores de compiladores podem realizar:
+
+- **Inlining** de funções pequenas.  
+- **Code hoisting**.  
+- **Dead store elimination**.  
+- **Eliminação de subexpressões comuns.**  
+- **Loop unrolling**.  
+- **Otimizações de loop:**  
+  - Code motion,  
+  - Eliminação de variáveis de indução,  
+  - Redução de força (strength reduction).  
+
+---
+
+### Inlining de Funções
+
+**Definição:**  
+Inserir diretamente o corpo da função em vez de chamá-la.
+
+**Vantagens:**
+- Evita custo de chamada.  
+- Permite outras otimizações (propagação de constantes, etc.).
+
+**Desvantagem:**  
+Inlines em funções grandes tornam o executável muito maior.
+
+---
+
+### Code Hoisting
+
+**Definição:**  
+Mover cálculos para fora de loops quando possível.  
+Evita recomputar valores invariantes.
+
+**Exemplo:**
+
+DO I = 1, 100
+ARRAY(I) = 2.0 * PI * I
+ENDDO
+
+
+`(2.0 * PI)` é uma expressão invariante e pode ser movida:
+
+t = 2.0 * PI
+DO I = 1, 100
+ARRAY(I) = t * I
+ENDDO
+
+
+---
+
+### Dead Store Elimination
+
+O compilador ignora variáveis cujos valores **nunca são usados**.  
+Remove operações desnecessárias que calculam valores inúteis.  
+
+---
+
+### Eliminação de Subexpressões Comuns
+
+**Exemplo:**
+
+X = A * LOG(Y) + (LOG(Y)) ** 2
+
+
+Pode ser reescrito como:
+
+t = LOG(Y)
+X = A * t + (t ** 2)
+
+
+Evita chamadas redundantes à função `LOG(Y)`  
+e reduz operações pesadas.
+
+---
+
+### Loop Unrolling
+
+**Objetivo:** reduzir custo de verificações e saltos de loop.
+
+Exemplo (loop original):
+
+for (int i = 0; i < 3; i++) {
+color_map[n + i] = i;
+}
+
+
+Versão “unrolled”:
+
+int i = 0;
+color_map[n + i] = i;
+i++;
+color_map[n + i] = i;
+i++;
+color_map[n + i] = i;
+
+
+O loop foi expandido manualmente, removendo verificações e incrementos automáticos.  
+
+---
+
+### Code Motion
+
+**Definição:**  
+Mover para fora do loop expressões que não variam.
+
+Exemplo:
+
+while (i <= limit - 2) {
+loop code
+}
+
+
+Se `limit` não muda dentro do loop, substitui-se:
+
+t = limit - 2;
+while (i <= t) {
+loop code
+}
+
+
+---
+
+### Conclusão
+
+Compiladores podem realizar **muitas otimizações automáticas**.  
+Ainda assim, programadores devem garantir que:
+
+- As otimizações **não alterem o significado** do programa.  
+- A **correção semântica** seja sempre preservada.  
+
+---
+
+**Resumo das Otimizações Estudadas:**
+- Inlining de funções pequenas  
+- Code Hoisting  
+- Dead Store Elimination  
+- Eliminação de Subexpressões Comuns  
+- Loop Unrolling  
+- Code Motion  
+- Otimizações em loops (indução, força, dependência)
+
+---
+
+**FIM — Otimização de Código (PUCRS)**
+
+
