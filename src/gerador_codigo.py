@@ -307,6 +307,117 @@ class GeradorCodigo:
         # carrega valor indiretamente
         self.emitir("LDI")  # carrega do endereço calculado
     
+    # ========== arrays de structs ==========
+    def declarar_array_struct(self, nome, tipo_struct, tamanho_array):
+        """declara array de structs
+        exemplo: arr : array [5] of Ponto;
+        """
+        struct_info = self.ts.buscar(tipo_struct)
+        if not struct_info:
+            raise ValueError(f"struct {tipo_struct} não encontrada")
+        
+        tamanho_struct = struct_info['tamanho']
+        tamanho_total = tamanho_struct * tamanho_array
+        rotulo = self.ts.inserir(nome, f"array[{tamanho_array}] of {tipo_struct}", 
+                                rotulo=f"_{nome}", tamanho=tamanho_total)
+        self.emitir(f"{rotulo} DS {tamanho_total}")
+        return rotulo
+    
+    def atribuir_campo_struct_array(self, nome_array, nome_campo):
+        """atribui valor do topo da pilha ao campo de struct no array
+        exemplo: arr[0].x := 10;
+        espera na pilha: [valor, índice]
+        """
+        simbolo = self.ts.buscar(nome_array)
+        if not simbolo:
+            raise ValueError(f"array {nome_array} não encontrado")
+        
+        # obtém informações do tipo struct
+        tipo_array = simbolo['tipo']
+        if not tipo_array.startswith('array[') or ' of ' not in tipo_array:
+            raise ValueError(f"{nome_array} não é um array de structs")
+        
+        tipo_struct = tipo_array.split(' of ')[1]
+        struct_info = self.ts.buscar(tipo_struct)
+        if not struct_info:
+            raise ValueError(f"struct {tipo_struct} não encontrada")
+        
+        # obtém offset do campo
+        campos = struct_info.get('campos', {})
+        campo_info = campos.get(nome_campo)
+        if not campo_info:
+            raise ValueError(f"campo {nome_campo} não encontrado em {tipo_struct}")
+        
+        tipo_campo, offset_campo = campo_info
+        tamanho_struct = struct_info['tamanho']
+        
+        # pilha: [valor, índice]
+        # salva índice temporariamente
+        temp_indice = self.novo_temp()
+        self.sta(temp_indice)  # salva índice
+        
+        # salva valor temporariamente
+        temp_valor = self.novo_temp()
+        self.sta(temp_valor)  # salva valor
+        
+        # calcula endereço: base + indice * tamanho_struct + offset_campo
+        self.lda(simbolo['rotulo'])  # endereço base do array
+        self.lda(temp_indice)  # índice
+        self.ldc(tamanho_struct)  # tamanho da struct
+        self.mul()
+        self.add()  # base + indice * tamanho_struct
+        self.ldc(offset_campo)  # offset do campo
+        self.add()  # endereço calculado no topo
+        
+        # carrega valor e armazena
+        self.lda(temp_valor)  # valor
+        self.emitir("STI")  # armazena indiretamente
+    
+    def carregar_campo_struct_array(self, nome_array, nome_campo):
+        """carrega campo de struct no array na pilha
+        exemplo: x := arr[0].x;
+        espera na pilha: [índice]
+        """
+        simbolo = self.ts.buscar(nome_array)
+        if not simbolo:
+            raise ValueError(f"array {nome_array} não encontrado")
+        
+        # obtém informações do tipo struct
+        tipo_array = simbolo['tipo']
+        if not tipo_array.startswith('array[') or ' of ' not in tipo_array:
+            raise ValueError(f"{nome_array} não é um array de structs")
+        
+        tipo_struct = tipo_array.split(' of ')[1]
+        struct_info = self.ts.buscar(tipo_struct)
+        if not struct_info:
+            raise ValueError(f"struct {tipo_struct} não encontrada")
+        
+        # obtém offset do campo
+        campos = struct_info.get('campos', {})
+        campo_info = campos.get(nome_campo)
+        if not campo_info:
+            raise ValueError(f"campo {nome_campo} não encontrado em {tipo_struct}")
+        
+        tipo_campo, offset_campo = campo_info
+        tamanho_struct = struct_info['tamanho']
+        
+        # pilha: [índice]
+        # salva índice temporariamente
+        temp_indice = self.novo_temp()
+        self.sta(temp_indice)  # salva índice
+        
+        # calcula endereço: base + indice * tamanho_struct + offset_campo
+        self.lda(simbolo['rotulo'])  # endereço base do array
+        self.lda(temp_indice)  # índice
+        self.ldc(tamanho_struct)  # tamanho da struct
+        self.mul()
+        self.add()  # base + indice * tamanho_struct
+        self.ldc(offset_campo)  # offset do campo
+        self.add()  # endereço calculado no topo
+        
+        # carrega valor indiretamente
+        self.emitir("LDI")  # carrega do endereço calculado
+    
     # ========== expressão de atribuição ==========
     def expressao_atribuicao(self, nome):
         """
