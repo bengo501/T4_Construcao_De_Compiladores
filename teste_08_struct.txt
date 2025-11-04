@@ -1,0 +1,28 @@
+teste 8: variáveis do tipo struct
+programa: adicionar possibilidade de usar variáveis do tipo struct
+
+programa fonte:
+struct Ponto {
+    x : integer;
+    y : integer;
+};
+p : Ponto;
+p.x := 10;
+p.y := 20;
+
+código gerado:
+JMP _start
+_p DS 8
+_start: NOP
+LDC 10
+LDA _p
+LDC 0
+ADD
+STI
+LDC 20
+LDA _p
+LDC 4
+ADD
+STI
+HALT
+

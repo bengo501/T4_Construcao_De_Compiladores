@@ -1,0 +1,21 @@
+teste 3: operador +=
+programa: adicionar o operador "+="
+
+programa fonte:
+x : integer;
+x := 10;
+x += 5;   // x = x + 5
+
+código gerado:
+JMP _start
+_x DS 4
+_start: NOP
+LDC 10
+STA _x
+LDA _x
+LDC 5
+ADD
+DUP
+STA _x
+HALT
+

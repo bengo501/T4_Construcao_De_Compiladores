@@ -1,0 +1,52 @@
+teste 10: struct com array (bonus)
+programa: permitir criar structs que tenham um array como campo da struct
+
+programa fonte:
+struct Pessoa {
+    idade : integer;
+    scores : array [3] of integer;
+};
+p : Pessoa;
+p.idade := 25;
+p.scores[0] := 100;
+p.scores[1] := 90;
+p.scores[2] := 95;
+
+código gerado:
+JMP _start
+_p DS 16
+_start: NOP
+LDC 25
+LDA _p
+LDC 0
+ADD
+STI
+LDC 100
+LDA _p
+LDC 4
+ADD
+LDC 0
+LDC 4
+MUL
+ADD
+STI
+LDC 90
+LDA _p
+LDC 4
+ADD
+LDC 1
+LDC 4
+MUL
+ADD
+STI
+LDC 95
+LDA _p
+LDC 4
+ADD
+LDC 2
+LDC 4
+MUL
+ADD
+STI
+HALT
+

@@ -1,0 +1,331 @@
+"""
+exemplos de uso do gerador de código
+demonstra como usar cada funcionalidade implementada
+"""
+
+from gerador_codigo import GeradorCodigo
+
+def exemplo_expressao_atribuicao():
+    """exemplo: expressão de atribuição"""
+    print("=== exemplo 1: expressão de atribuição ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    # declara variável
+    gc.declarar_variavel("x", "integer", 4)
+    
+    # x := 5 (expressão de atribuição)
+    gc.ldc(5)
+    gc.expressao_atribuicao("x")  # atribui e mantém valor no topo
+    
+    # y := x := 5 (cadeia de atribuições)
+    gc.declarar_variavel("y", "integer", 4)
+    gc.expressao_atribuicao("y")  # atribui valor que estava no topo
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_incremento_decremento():
+    """exemplo: incremento e decremento"""
+    print("=== exemplo 2: incremento e decremento ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    gc.declarar_variavel("a", "integer", 4)
+    gc.declarar_variavel("b", "integer", 4)
+    
+    # pré-incremento: ++a
+    gc.pre_incremento("a")
+    
+    # pós-incremento: b++
+    gc.pos_incremento("b")
+    
+    # pré-decremento: --a
+    gc.pre_decremento("a")
+    
+    # pós-decremento: b--
+    gc.pos_decremento("b")
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_operador_mais_igual():
+    """exemplo: operador +="""
+    print("=== exemplo 3: operador += ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    gc.declarar_variavel("x", "integer", 4)
+    
+    # inicializa x
+    gc.ldc(10)
+    gc.atribuir_variavel("x")
+    
+    # x += 5
+    gc.ldc(5)
+    gc.atribuicao_adicao("x")
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_operador_condicional():
+    """exemplo: operador condicional ?:"""
+    print("=== exemplo 4: operador condicional ?: ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    gc.declarar_variavel("x", "integer", 4)
+    gc.declarar_variavel("y", "integer", 4)
+    gc.declarar_variavel("z", "integer", 4)
+    
+    # inicializa
+    gc.ldc(10)
+    gc.atribuir_variavel("x")
+    gc.ldc(5)
+    gc.atribuir_variavel("y")
+    
+    # z := x > y ? x : y
+    gc.carregar_variavel("x")
+    gc.carregar_variavel("y")
+    gc.grt()  # x > y
+    
+    rotulo_else = gc.ts.novo_rotulo_cod()
+    rotulo_fim = gc.ts.novo_rotulo_cod()
+    
+    gc.jzer(rotulo_else)  # se falso, pula para else
+    gc.carregar_variavel("x")  # exp2
+    gc.jmp(rotulo_fim)
+    gc.emitir_rotulo(rotulo_else)
+    gc.carregar_variavel("y")  # exp3
+    gc.emitir_rotulo(rotulo_fim)
+    
+    gc.atribuir_variavel("z")
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_do_while():
+    """exemplo: comando do-while"""
+    print("=== exemplo 5: comando do-while ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    gc.declarar_variavel("i", "integer", 4)
+    
+    # inicializa i
+    gc.ldc(0)
+    gc.atribuir_variavel("i")
+    
+    # do { i++ } while (i < 10)
+    rotulo_inicio, rotulo_fim = gc.inicio_do_while()
+    
+    gc.pos_incremento("i")
+    
+    gc.carregar_variavel("i")
+    gc.ldc(10)
+    gc.les()  # i < 10
+    
+    gc.fim_do_while()
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_for():
+    """exemplo: comando for"""
+    print("=== exemplo 6: comando for ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    gc.declarar_variavel("i", "integer", 4)
+    
+    # for (i := 0; i < 10; i++) { ... }
+    # expressão inicial: i := 0
+    gc.ldc(0)
+    gc.atribuir_variavel("i")
+    
+    rotulo_teste, rotulo_incremento, rotulo_fim = gc.inicio_for()
+    
+    # teste: i < 10
+    gc.carregar_variavel("i")
+    gc.ldc(10)
+    gc.les()
+    gc.teste_for()
+    
+    # corpo do loop (vazio neste exemplo)
+    
+    # incremento: i++
+    gc.carregar_variavel("i")
+    gc.ldc(1)
+    gc.add()
+    gc.atribuir_variavel("i")
+    
+    gc.fim_for()
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_break_continue():
+    """exemplo: comandos break e continue"""
+    print("=== exemplo 7: break e continue ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    gc.declarar_variavel("i", "integer", 4)
+    
+    # while (i < 10) {
+    #   i++
+    #   if (i == 5) continue
+    #   if (i == 8) break
+    # }
+    gc.ldc(0)
+    gc.atribuir_variavel("i")
+    
+    rotulo_inicio, rotulo_fim = gc.inicio_while()
+    
+    gc.carregar_variavel("i")
+    gc.ldc(10)
+    gc.les()
+    gc.jzer(rotulo_fim)
+    
+    gc.pos_incremento("i")
+    
+    # if (i == 5) continue
+    gc.carregar_variavel("i")
+    gc.ldc(5)
+    gc.eq()
+    rotulo_else1, rotulo_fim1 = gc.inicio_if()
+    gc.continue_cmd()
+    gc.fim_if()
+    
+    # if (i == 8) break
+    gc.carregar_variavel("i")
+    gc.ldc(8)
+    gc.eq()
+    rotulo_else2, rotulo_fim2 = gc.inicio_if()
+    gc.break_cmd()
+    gc.fim_if()
+    
+    gc.jmp(rotulo_inicio)
+    gc.emitir_rotulo(rotulo_fim)
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_struct():
+    """exemplo: variáveis do tipo struct"""
+    print("=== exemplo 8: struct ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    # declara struct ponto
+    gc.declarar_struct("Ponto", [
+        ("x", "integer", 4),
+        ("y", "integer", 4)
+    ])
+    
+    # declara variável do tipo Ponto
+    gc.declarar_variavel_struct("p", "Ponto")
+    
+    # p.x := 10
+    gc.ldc(10)
+    gc.carregar_variavel("p")
+    gc.ldc(0)  # offset do campo x
+    gc.add()
+    gc.emitir("STI")  # armazena indiretamente
+    
+    # p.y := 20
+    gc.ldc(20)
+    gc.carregar_variavel("p")
+    gc.ldc(4)  # offset do campo y
+    gc.add()
+    gc.emitir("STI")
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_array_inteiros():
+    """exemplo: arrays de inteiros (bonus)"""
+    print("=== exemplo 9: arrays de inteiros (bonus) ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    # declara array de 5 inteiros
+    gc.declarar_array("arr", "integer", 4, 5)
+    
+    # arr[0] := 10
+    gc.ldc(0)  # índice
+    gc.ldc(10)  # valor
+    gc.atribuir_array_elemento("arr", 0)
+    
+    # arr[2] := 20
+    gc.ldc(2)  # índice
+    gc.ldc(20)  # valor
+    gc.atribuir_array_elemento("arr", 2)
+    
+    # x := arr[2]
+    gc.declarar_variavel("x", "integer", 4)
+    gc.ldc(2)  # índice
+    gc.carregar_array_elemento("arr", 2)
+    gc.atribuir_variavel("x")
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+def exemplo_struct_com_array():
+    """exemplo: struct com array (bonus)"""
+    print("=== exemplo 10: struct com array (bonus) ===")
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    # declara struct que contém array
+    gc.declarar_struct("Pessoa", [
+        ("idade", "integer", 4),
+        ("scores", "array[3]", 12)  # array de 3 inteiros
+    ])
+    
+    # declara variável do tipo Pessoa
+    gc.declarar_variavel_struct("p", "Pessoa")
+    
+    # p.idade := 25
+    gc.ldc(25)
+    gc.carregar_variavel("p")
+    gc.ldc(0)  # offset do campo idade
+    gc.add()
+    gc.emitir("STI")
+    
+    # p.scores[0] := 100
+    gc.ldc(100)
+    gc.carregar_variavel("p")
+    gc.ldc(4)  # offset base do array scores
+    gc.add()
+    gc.ldc(0)  # índice 0
+    gc.ldc(4)  # tamanho do elemento
+    gc.mul()
+    gc.add()  # endereço calculado
+    gc.emitir("STI")
+    
+    gc.fim_programa()
+    print(gc.get_codigo())
+    print()
+
+if __name__ == "__main__":
+    exemplo_expressao_atribuicao()
+    exemplo_incremento_decremento()
+    exemplo_operador_mais_igual()
+    exemplo_operador_condicional()
+    exemplo_do_while()
+    exemplo_for()
+    exemplo_break_continue()
+    exemplo_struct()
+    exemplo_array_inteiros()
+    exemplo_struct_com_array()
+
