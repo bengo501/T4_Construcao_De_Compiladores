@@ -1,31 +1,30 @@
-"""
-gerador de código - máquina de pilha
-baseado no exemplo visto em aula e nas referências
-implementa todas as funcionalidades solicitadas no t4
-"""
+#gerador de código - máquina de pilha
+#baseado no exemplo visto em aula e nas referências
+#implementa todas as funcionalidades solicitadas no t4
+
 
 class TabelaSimbolos:
-    """tabela de símbolos para armazenar variáveis, structs e funções"""
+    #tabela de símbolos para armazenar variáveis, structs e funções
     def __init__(self):
         self.simbolos = {}
         self.contador_var = 0
         self.contador_rot = 0
     
     def novo_rotulo_var(self):
-        """gera novo rótulo para variável (V001, V002, ...)"""
+        #gera novo rótulo para variável (V001, V002, ...)
         self.contador_var += 1
         return f"V{self.contador_var:03d}"
     
     def novo_rotulo_cod(self):
-        """gera novo rótulo para código (R001, R002, ...)"""
+        #gera novo rótulo para código (R001, R002, ...)
         self.contador_rot += 1
         return f"R{self.contador_rot:03d}"
     
     def inserir(self, nome, tipo, rotulo=None, tamanho=4, offset=0, campos=None):
-        """
-        insere símbolo na tabela
-        campos: dict com campos de struct {nome_campo: (tipo, offset)}
-        """
+
+        #insere símbolo na tabela
+        #campos: dict com campos de struct {nome_campo: (tipo, offset)}
+
         if rotulo is None:
             rotulo = self.novo_rotulo_var()
         
@@ -39,11 +38,11 @@ class TabelaSimbolos:
         return rotulo
     
     def buscar(self, nome):
-        """busca símbolo na tabela"""
+        #busca símbolo na tabela
         return self.simbolos.get(nome)
     
     def buscar_campo(self, nome_struct, nome_campo):
-        """busca campo de struct"""
+        #busca campo de struct
         simbolo = self.buscar(nome_struct)
         if simbolo and simbolo['campos']:
             return simbolo['campos'].get(nome_campo)
@@ -51,7 +50,7 @@ class TabelaSimbolos:
 
 
 class GeradorCodigo:
-    """gerador de código para máquina de pilha"""
+    #gerador de código para máquina de pilha
     def __init__(self):
         self.ts = TabelaSimbolos()
         self.codigo = []
@@ -60,130 +59,117 @@ class GeradorCodigo:
         self.contador_temp = 0
     
     def novo_temp(self):
-        """gera novo rótulo temporário"""
+        #gera novo rótulo temporário
         self.contador_temp += 1
         return f"_tmp{self.contador_temp}"
     
     def emitir(self, instrucao):
-        """emite uma instrução de código"""
+        #emite uma instrução de código
         self.codigo.append(instrucao)
     
     def emitir_rotulo(self, rotulo):
-        """emite um rótulo"""
+        #emite um rótulo
         self.codigo.append(f"{rotulo}: NOP")
     
     def get_codigo(self):
-        """retorna o código gerado"""
+        #retorna o código gerado
         return "\n".join(self.codigo)
     
     # ========== instruções básicas ==========
     def ldc(self, valor):
-        """empilha constante"""
+        #empilha constante
         self.emitir(f"LDC {valor}")
     
     def lda(self, rotulo):
-        """empilha conteúdo do endereço"""
+        #empilha conteúdo do endereço
         self.emitir(f"LDA {rotulo}")
     
     def sta(self, rotulo):
-        """desempilha e armazena no endereço"""
+        #desempilha e armazena no endereço
         self.emitir(f"STA {rotulo}")
     
     def add(self):
-        """desempilha RT1 e RT2, empilha RT2 + RT1"""
+        #desempilha RT1 e RT2, empilha RT2 + RT1
         self.emitir("ADD")
     
     def sub(self):
-        """desempilha RT1 e RT2, empilha RT2 - RT1"""
+                #desempilha RT1 e RT2, empilha RT2 - RT1
         self.emitir("SUB")
     
     def mul(self):
-        """desempilha RT1 e RT2, empilha RT2 * RT1"""
+        #desempilha RT1 e RT2, empilha RT2 * RT1
         self.emitir("MUL")
     
     def div(self):
-        """desempilha RT1 e RT2, empilha RT2 / RT1"""
+        #desempilha RT1 e RT2, empilha RT2 / RT1
         self.emitir("DIV")
     
     def mod(self):
-        """desempilha RT1 e RT2, empilha RT2 % RT1"""
+        #desempilha RT1 e RT2, empilha RT2 % RT1
         self.emitir("MOD")
     
     def neg(self):
-        """desempilha RT1, empilha -RT1"""
+        #desempilha RT1, empilha -RT1
         self.emitir("NEG")
     
     def dup(self):
-        """duplica topo da pilha"""
+        #duplica topo da pilha
         self.emitir("DUP")
     
     def drop(self):
-        """desempilha uma palavra (descarta topo da pilha)"""
+        #desempilha uma palavra (descarta topo da pilha)
         self.emitir("DROP")
     
     def eq(self):
-        """desempilha RT1 e RT2, empilha 1 se RT2 == RT1, senão 0"""
+        #desempilha RT1 e RT2, empilha 1 se RT2 == RT1, senão 0
         self.emitir("EQ")
     
     def ne(self):
-        """desempilha RT1 e RT2, empilha 1 se RT2 != RT1, senão 0"""
-        self.emitir("NE")
+        self.emitir("NE")   #desempilha RT1 e RT2, empilha 1 se RT2 != RT1, senão 0
     
     def grt(self):
-        """desempilha RT1 e RT2, empilha 1 se RT2 > RT1, senão 0"""
-        self.emitir("GRT")
+        self.emitir("GRT")   #desempilha RT1 e RT2, empilha 1 se RT2 > RT1, senão 0
     
     def les(self):
-        """desempilha RT1 e RT2, empilha 1 se RT2 < RT1, senão 0"""
-        self.emitir("LES")
+        self.emitir("LES")   #desempilha RT1 e RT2, empilha 1 se RT2 < RT1, senão 0
     
     def geq(self):
-        """desempilha RT1 e RT2, empilha 1 se RT2 >= RT1, senão 0"""
-        self.emitir("GEQ")
+        self.emitir("GEQ")   #desempilha RT1 e RT2, empilha 1 se RT2 >= RT1, senão 0
     
     def leq(self):
-        """desempilha RT1 e RT2, empilha 1 se RT2 <= RT1, senão 0"""
-        self.emitir("LEQ")
+        self.emitir("LEQ")   #desempilha RT1 e RT2, empilha 1 se RT2 <= RT1, senão 0
     
     def jmp(self, rotulo):
-        """desvia para rótulo"""
-        self.emitir(f"JMP {rotulo}")
+        self.emitir(f"JMP {rotulo}")       #desvia para rótulo
     
     def jzer(self, rotulo):
-        """desempilha e, se zero, desvia para rótulo"""
-        self.emitir(f"JZER {rotulo}")
+        self.emitir(f"JZER {rotulo}")        #desempilha e, se zero, desvia para rótulo
     
     def jnz(self, rotulo):
-        """desempilha e, se não zero, desvia para rótulo"""
-        self.emitir(f"JNZ {rotulo}")
+        self.emitir(f"JNZ {rotulo}")       #desempilha e, se não zero, desvia para rótulo
     
     # ========== declarações ==========
-    def declarar_variavel(self, nome, tipo="integer", tamanho=4):
-        """declara variável global"""
-        rotulo = self.ts.inserir(nome, tipo, rotulo=f"_{nome}", tamanho=tamanho)
-        self.emitir(f"{rotulo} DS {tamanho}")
-        return rotulo
+    def declarar_variavel(self, nome, tipo="integer", tamanho=4):      #declara variável global
+        rotulo = self.ts.inserir(nome, tipo, rotulo=f"_{nome}", tamanho=tamanho)     
+        self.emitir(f"{rotulo} DS {tamanho}")                                         #aloca espaço na memória
+        return rotulo 
     
-    def declarar_struct(self, nome, campos):
-        """
-        declara struct
-        campos: lista de tuplas (nome_campo, tipo, tamanho)
-        """
+    def declarar_struct(self, nome, campos):#declara struct
+        #campos: lista de tuplas (nome_campo, tipo, tamanho)
         offset = 0
         campos_dict = {}
         tamanho_total = 0
         
-        for nome_campo, tipo, tamanho in campos:
-            campos_dict[nome_campo] = (tipo, offset)
-            offset += tamanho
-            tamanho_total += tamanho
+        for nome_campo, tipo, tamanho in campos: # para cada campo
+            campos_dict[nome_campo] = (tipo, offset) #adiciona campo à tabela de símbolos
+            offset += tamanho #incrementa offset
+            tamanho_total += tamanho #incrementa tamanho total
         
-        rotulo = self.ts.inserir(nome, "struct", rotulo=f"_{nome}", 
+        rotulo = self.ts.inserir(nome, "struct", rotulo=f"_{nome}", #declara struct
                                  tamanho=tamanho_total, campos=campos_dict)
         return rotulo
     
-    def declarar_variavel_struct(self, nome, tipo_struct):
-        """declara variável do tipo struct"""
+    def declarar_variavel_struct(self, nome, tipo_struct):        #declara variável do tipo struct
         struct_info = self.ts.buscar(tipo_struct)
         if not struct_info:
             raise ValueError(f"struct {tipo_struct} não encontrada")
@@ -193,8 +179,7 @@ class GeradorCodigo:
         self.emitir(f"{rotulo} DS {tamanho}")
         return rotulo
     
-    def declarar_array(self, nome, tipo="integer", tamanho_elemento=4, tamanho_array=1):
-        """declara array"""
+    def declarar_array(self, nome, tipo="integer", tamanho_elemento=4, tamanho_array=1):       #declara array
         tamanho_total = tamanho_elemento * tamanho_array
         rotulo = self.ts.inserir(nome, f"array[{tamanho_array}]", 
                                 rotulo=f"_{nome}", tamanho=tamanho_total)
@@ -202,15 +187,13 @@ class GeradorCodigo:
         return rotulo
     
     # ========== expressões ==========
-    def carregar_variavel(self, nome):
-        """carrega variável na pilha"""
+    def carregar_variavel(self, nome):   #carrega variável na pilha
         simbolo = self.ts.buscar(nome)
         if not simbolo:
             raise ValueError(f"variável {nome} não encontrada")
         self.lda(simbolo['rotulo'])
     
-    def carregar_campo_struct(self, nome_var, nome_campo):
-        """carrega campo de struct na pilha"""
+    def carregar_campo_struct(self, nome_var, nome_campo):     #carrega campo de struct na pilha
         simbolo = self.ts.buscar(nome_var)
         if not simbolo:
             raise ValueError(f"variável {nome_var} não encontrada")
@@ -229,15 +212,13 @@ class GeradorCodigo:
         # carrega valor do campo (LDO offset)
         self.emitir(f"LDO {offset}")
     
-    def atribuir_variavel(self, nome):
-        """atribui valor do topo da pilha à variável"""
+    def atribuir_variavel(self, nome):    #atribui valor do topo da pilha à variável
         simbolo = self.ts.buscar(nome)
         if not simbolo:
             raise ValueError(f"variável {nome} não encontrada")
         self.sta(simbolo['rotulo'])
     
-    def atribuir_campo_struct(self, nome_var, nome_campo):
-        """atribui valor do topo da pilha ao campo de struct"""
+    def atribuir_campo_struct(self, nome_var, nome_campo):         #atribui valor do topo da pilha ao campo de struct
         simbolo = self.ts.buscar(nome_var)
         if not simbolo:
             raise ValueError(f"variável {nome_var} não encontrada")
@@ -256,62 +237,40 @@ class GeradorCodigo:
         # armazena valor no campo (STO offset)
         self.emitir(f"STO {offset}")
     
-    def atribuir_array_elemento(self, nome_array):
-        """atribui valor do topo da pilha ao elemento do array
-        espera na pilha: [valor, índice]
-        """
+    def atribuir_array_elemento(self, nome_array):    #atribui valor do topo da pilha ao elemento do array
+        #espera na pilha: [valor, índice]
         simbolo = self.ts.buscar(nome_array)
         if not simbolo:
             raise ValueError(f"array {nome_array} não encontrado")
-        
-        # pilha: [valor, índice]
-        # salva índice temporariamente
-        temp_indice = self.novo_temp()
-        self.sta(temp_indice)  # salva índice
-        
-        # salva valor temporariamente
-        temp_valor = self.novo_temp()
-        self.sta(temp_valor)  # salva valor
-        
-        # calcula endereço: base + indice * tamanho_elemento
-        self.lda(simbolo['rotulo'])  # endereço base
-        self.lda(temp_indice)  # índice
-        self.ldc(4)  # assume inteiros de 4 bytes
+        temp_indice = self.novo_temp() # salva índice temporariamente
+        self.sta(temp_indice) # salva índice
+        temp_valor = self.novo_temp() # salva valor temporariamente
+        self.sta(temp_valor) # salva valor
+        self.lda(simbolo['rotulo']) # endereço base
+        self.lda(temp_indice) # índice
+        self.ldc(4) # assume inteiros de 4 bytes
         self.mul()
-        self.add()  # endereço calculado no topo
-        
-        # carrega valor e armazena
-        self.lda(temp_valor)  # valor
-        self.emitir("STI")  # armazena indiretamente
+        self.add() # endereço calculado no topo
+        self.lda(temp_valor) # valor
+        self.emitir("STI") # armazena indiretamente
     
-    def carregar_array_elemento(self, nome_array):
-        """carrega elemento do array na pilha
-        espera na pilha: [índice]
-        """
+    def carregar_array_elemento(self, nome_array):   #carrega elemento do array na pilha
+        #espera na pilha: [índice]
         simbolo = self.ts.buscar(nome_array)
         if not simbolo:
             raise ValueError(f"array {nome_array} não encontrado")
         
-        # pilha: [índice]
-        # salva índice temporariamente
-        temp_indice = self.novo_temp()
-        self.sta(temp_indice)  # salva índice
-        
-        # calcula endereço: base + indice * tamanho_elemento
+        temp_indice = self.novo_temp() # salva índice temporariamente
+        self.sta(temp_indice) # salva índice
         self.lda(simbolo['rotulo'])  # endereço base
         self.lda(temp_indice)  # índice
         self.ldc(4)  # assume inteiros de 4 bytes
         self.mul()
-        self.add()  # endereço calculado no topo
-        
-        # carrega valor indiretamente
+        self.add() # endereço calculado no topo
         self.emitir("LDI")  # carrega do endereço calculado
     
     # ========== arrays de structs ==========
-    def declarar_array_struct(self, nome, tipo_struct, tamanho_array):
-        """declara array de structs
-        exemplo: arr : array [5] of Ponto;
-        """
+    def declarar_array_struct(self, nome, tipo_struct, tamanho_array):      #declara array de structs
         struct_info = self.ts.buscar(tipo_struct)
         if not struct_info:
             raise ValueError(f"struct {tipo_struct} não encontrada")
@@ -323,11 +282,8 @@ class GeradorCodigo:
         self.emitir(f"{rotulo} DS {tamanho_total}")
         return rotulo
     
-    def atribuir_campo_struct_array(self, nome_array, nome_campo):
-        """atribui valor do topo da pilha ao campo de struct no array
-        exemplo: arr[0].x := 10;
-        espera na pilha: [valor, índice]
-        """
+    def atribuir_campo_struct_array(self, nome_array, nome_campo):#atribui valor do topo da pilha ao campo de struct no array
+       # espera na pilha: [valor, índice]
         simbolo = self.ts.buscar(nome_array)
         if not simbolo:
             raise ValueError(f"array {nome_array} não encontrado")
@@ -351,15 +307,10 @@ class GeradorCodigo:
         tipo_campo, offset_campo = campo_info
         tamanho_struct = struct_info['tamanho']
         
-        # pilha: [valor, índice]
-        # salva índice temporariamente
-        temp_indice = self.novo_temp()
-        self.sta(temp_indice)  # salva índice
-        
-        # salva valor temporariamente
-        temp_valor = self.novo_temp()
-        self.sta(temp_valor)  # salva valor
-        
+        temp_indice = self.novo_temp() # salva índice temporariamente
+        self.sta(temp_indice) # salva índice
+        temp_valor = self.novo_temp() # salva valor temporariamente
+        self.sta(temp_valor) # salva valor
         # calcula endereço: base + indice * tamanho_struct + offset_campo
         self.lda(simbolo['rotulo'])  # endereço base do array
         self.lda(temp_indice)  # índice
@@ -367,17 +318,12 @@ class GeradorCodigo:
         self.mul()
         self.add()  # base + indice * tamanho_struct
         self.ldc(offset_campo)  # offset do campo
-        self.add()  # endereço calculado no topo
-        
-        # carrega valor e armazena
+        self.add() # endereço calculado no topo
         self.lda(temp_valor)  # valor
         self.emitir("STI")  # armazena indiretamente
     
-    def carregar_campo_struct_array(self, nome_array, nome_campo):
-        """carrega campo de struct no array na pilha
-        exemplo: x := arr[0].x;
-        espera na pilha: [índice]
-        """
+    def carregar_campo_struct_array(self, nome_array, nome_campo):   #carrega campo de struct no array na pilha
+        #espera na pilha: [índice]
         simbolo = self.ts.buscar(nome_array)
         if not simbolo:
             raise ValueError(f"array {nome_array} não encontrado")
@@ -401,12 +347,8 @@ class GeradorCodigo:
         tipo_campo, offset_campo = campo_info
         tamanho_struct = struct_info['tamanho']
         
-        # pilha: [índice]
-        # salva índice temporariamente
-        temp_indice = self.novo_temp()
-        self.sta(temp_indice)  # salva índice
-        
-        # calcula endereço: base + indice * tamanho_struct + offset_campo
+        temp_indice = self.novo_temp() # salva índice temporariamente
+        self.sta(temp_indice) # salva índice
         self.lda(simbolo['rotulo'])  # endereço base do array
         self.lda(temp_indice)  # índice
         self.ldc(tamanho_struct)  # tamanho da struct
@@ -419,24 +361,19 @@ class GeradorCodigo:
         self.emitir("LDI")  # carrega do endereço calculado
     
     # ========== expressão de atribuição ==========
-    def expressao_atribuicao(self, nome):
-        """
-        transforma comando de atribuição em expressão de atribuição
-        atribui valor e mantém o valor no topo da pilha
-        valor já está no topo da pilha
-        """
+    def expressao_atribuicao(self, nome):    #transforma comando de atribuição em expressão de atribuição
+        #atribui valor e mantém o valor no topo da pilha
+        #valor já está no topo da pilha
         simbolo = self.ts.buscar(nome)
         if not simbolo:
             raise ValueError(f"variável {nome} não encontrada")
         
-        # duplica valor antes de atribuir
         self.emitir("DUP")  # duplica topo da pilha
         self.sta(simbolo['rotulo'])
-        # valor permanece no topo da pilha
     
     # ========== incremento/decremento ==========
     def pre_incremento(self, nome):
-        """pré-incremento: ++var"""
+        #pré-incremento: ++var
         self.carregar_variavel(nome)
         self.ldc(1)
         self.add()
@@ -444,7 +381,7 @@ class GeradorCodigo:
         self.atribuir_variavel(nome)
     
     def pos_incremento(self, nome):
-        """pós-incremento: var++"""
+        #pós-incremento: var++
         self.carregar_variavel(nome)
         self.emitir("DUP")  # duplica valor original
         self.ldc(1)
@@ -453,7 +390,7 @@ class GeradorCodigo:
         # valor original fica no topo
     
     def pre_decremento(self, nome):
-        """pré-decremento: --var"""
+        #pré-decremento: --var
         self.carregar_variavel(nome)
         self.ldc(1)
         self.sub()
@@ -461,7 +398,7 @@ class GeradorCodigo:
         self.atribuir_variavel(nome)
     
     def pos_decremento(self, nome):
-        """pós-decremento: var--"""
+        #pós-decremento: var--
         self.carregar_variavel(nome)
         self.emitir("DUP")  # duplica valor original
         self.ldc(1)
@@ -471,7 +408,7 @@ class GeradorCodigo:
     
     # ========== operador += ==========
     def atribuicao_adicao(self, nome):
-        """operador +=: var += exp"""
+        #operador +=: var += exp
         self.carregar_variavel(nome)  # valor atual de var
         # expressão já está na pilha
         self.add()  # soma
@@ -480,10 +417,9 @@ class GeradorCodigo:
     
     # ========== operador condicional ?: ==========
     def operador_condicional(self, rotulo_else, rotulo_fim):
-        """
-        operador condicional: exp1 ? exp2 : exp3
-        exp1 (condição) já está na pilha
-        """
+        #transforma operador condicional em expressão condicional
+        #operador condicional: exp1 ? exp2 : exp3
+        #exp1 (condição) já está na pilha
         # se condição for falsa, pula para exp3
         self.jzer(rotulo_else)
         # se verdadeira, executa exp2 e pula para fim
@@ -498,25 +434,25 @@ class GeradorCodigo:
     
     # ========== estruturas de controle ==========
     def inicio_if(self):
-        """início de if: cria rótulos"""
+        #início de if: cria rótulos
         rotulo_else = self.ts.novo_rotulo_cod()
         rotulo_fim = self.ts.novo_rotulo_cod()
         self.pilha_rotulos.append((rotulo_else, rotulo_fim))
         return rotulo_else, rotulo_fim
     
     def fim_if_then(self):
-        """fim do bloco then"""
+        #fim do bloco then
         rotulo_else, rotulo_fim = self.pilha_rotulos[-1]
         self.jmp(rotulo_fim)
         self.emitir_rotulo(rotulo_else)
     
     def fim_if(self):
-        """fim de if"""
+        #fim de if
         rotulo_else, rotulo_fim = self.pilha_rotulos.pop()
         self.emitir_rotulo(rotulo_fim)
     
     def inicio_while(self):
-        """início de while"""
+        #início de while
         rotulo_inicio = self.ts.novo_rotulo_cod()
         rotulo_fim = self.ts.novo_rotulo_cod()
         self.pilha_rotulos.append((rotulo_inicio, rotulo_fim))
@@ -525,14 +461,14 @@ class GeradorCodigo:
         return rotulo_inicio, rotulo_fim
     
     def fim_while(self):
-        """fim de while"""
+        #fim de while
         rotulo_inicio, rotulo_fim = self.pilha_rotulos.pop()
         self.pilha_loops.pop()
         self.jmp(rotulo_inicio)
         self.emitir_rotulo(rotulo_fim)
     
     def inicio_do_while(self):
-        """início de do-while"""
+        #início de do-while
         rotulo_inicio = self.ts.novo_rotulo_cod()
         rotulo_fim = self.ts.novo_rotulo_cod()
         self.pilha_rotulos.append((rotulo_inicio, rotulo_fim))
@@ -541,7 +477,7 @@ class GeradorCodigo:
         return rotulo_inicio, rotulo_fim
     
     def fim_do_while(self):
-        """fim de do-while"""
+        #fim de do-while
         rotulo_inicio, rotulo_fim = self.pilha_rotulos.pop()
         self.pilha_loops.pop()
         # condição já está na pilha
@@ -549,10 +485,8 @@ class GeradorCodigo:
         self.emitir_rotulo(rotulo_fim)
     
     def inicio_for(self, exp_inicial=None):
-        """
-        início de for
-        exp_inicial: código para expressão inicial (pode ser None)
-        """
+        #início de for
+        #exp_inicial: código para expressão inicial (pode ser None)
         rotulo_teste = self.ts.novo_rotulo_cod()
         rotulo_incremento = self.ts.novo_rotulo_cod()
         rotulo_fim = self.ts.novo_rotulo_cod()
@@ -569,32 +503,32 @@ class GeradorCodigo:
         return rotulo_teste, rotulo_incremento, rotulo_fim
     
     def teste_for(self):
-        """teste de for: expressão de teste já está na pilha"""
+        #teste de for: expressão de teste já está na pilha
         rotulo_teste, rotulo_incremento, rotulo_fim = self.pilha_rotulos[-1]
         self.emitir_rotulo(rotulo_teste)
         self.jzer(rotulo_fim)  # se falso, sai do loop
     
     def incremento_for(self):
-        """incremento de for: expressão de incremento já foi gerada"""
+        #incremento de for: expressão de incremento já foi gerada
         rotulo_teste, rotulo_incremento, rotulo_fim = self.pilha_rotulos[-1]
         self.jmp(rotulo_incremento)  # volta para incremento
     
     def fim_for(self):
-        """fim de for"""
+        #fim de for
         rotulo_teste, rotulo_incremento, rotulo_fim = self.pilha_rotulos.pop()
         self.pilha_loops.pop()
         self.jmp(rotulo_incremento)  # volta para incremento
         self.emitir_rotulo(rotulo_fim)
     
     def break_cmd(self):
-        """comando break"""
+        #comando break
         if not self.pilha_loops:
             raise ValueError("break fora de loop")
         rotulo_inicio, rotulo_fim = self.pilha_loops[-1]
         self.jmp(rotulo_fim)
     
     def continue_cmd(self):
-        """comando continue"""
+        #comando continue
         if not self.pilha_loops:
             raise ValueError("continue fora de loop")
         rotulo_inicio, rotulo_fim = self.pilha_loops[-1]
@@ -610,7 +544,7 @@ class GeradorCodigo:
     
     # ========== início do programa ==========
     def inicio_programa(self):
-        """início do programa"""
+        #início do programa
         self.emitir("JMP _start")
     
     def fim_programa(self):
