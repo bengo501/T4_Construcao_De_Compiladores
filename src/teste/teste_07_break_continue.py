@@ -7,7 +7,11 @@ def gerar_teste():#gera codigo de teste para comandos break e continue
     gc = GeradorCodigo()
     gc.inicio_programa()
     
+<<<<<<< HEAD
     gc.declarar_variavel("i", "integer", 4) # declara var   
+=======
+    gc.declarar_variavel("i", "integer", 4) # declara var
+>>>>>>> 29756358e66b0592e4a1afb9bee37e0498906945
     gc.ldc(0) # inicializa i
     gc.atribuir_variavel("i")
     rotulo_inicio, rotulo_fim = gc.inicio_while() # inicio do while

@@ -176,19 +176,25 @@ class GeradorCodigo: #gerador de código para máquina de pilha
         if not simbolo:
             raise ValueError(f"variável {nome_var} não encontrada")
         
-        campo_info = simbolo['campos'].get(nome_campo)
+        # busca a definição da struct para obter os campos
+        tipo_struct = simbolo['tipo']
+        struct_info = self.ts.buscar(tipo_struct)
+        if not struct_info or not struct_info.get('campos'):
+            raise ValueError(f"struct {tipo_struct} não encontrada ou sem campos")
+        
+        campo_info = struct_info['campos'].get(nome_campo)
         if not campo_info:
-            raise ValueError(f"campo {nome_campo} não encontrado em {nome_var}")
+            raise ValueError(f"campo {nome_campo} não encontrado em {tipo_struct}")
         
         tipo_campo, offset = campo_info
         # carrega endereço base
         self.lda(simbolo['rotulo'])
-        # adiciona offset
-        if offset > 0:
-            self.ldc(offset)
-            self.add()
-        # carrega valor do campo (LDO offset)
-        self.emitir(f"LDO {offset}")
+        # adiciona offset (sempre, mesmo que seja 0 para consistência)
+        self.ldc(offset)
+        self.add()
+        # carrega valor do campo via acesso indireto (LDI)
+        # na pilha: [endereço] -> LDI -> [valor]
+        self.emitir("LDI")
 
     def atribuir_variavel(self, nome):#atribui valor do topo da pilha à variável
         simbolo = self.ts.buscar(nome)
@@ -197,23 +203,31 @@ class GeradorCodigo: #gerador de código para máquina de pilha
         self.sta(simbolo['rotulo'])
 
     def atribuir_campo_struct(self, nome_var, nome_campo):#atribui valor do topo da pilha ao campo de struct
+        # espera na pilha: [valor]
         simbolo = self.ts.buscar(nome_var)
         if not simbolo:
             raise ValueError(f"variável {nome_var} não encontrada")
         
-        campo_info = simbolo['campos'].get(nome_campo)
+        # busca a definição da struct para obter os campos
+        tipo_struct = simbolo['tipo']
+        struct_info = self.ts.buscar(tipo_struct)
+        if not struct_info or not struct_info.get('campos'):
+            raise ValueError(f"struct {tipo_struct} não encontrada ou sem campos")
+        
+        campo_info = struct_info['campos'].get(nome_campo)
         if not campo_info:
-            raise ValueError(f"campo {nome_campo} não encontrado em {nome_var}")
+            raise ValueError(f"campo {nome_campo} não encontrado em {tipo_struct}")
         
         tipo_campo, offset = campo_info
         # carrega endereço base
         self.lda(simbolo['rotulo'])
-        # adiciona offset
-        if offset > 0:
-            self.ldc(offset)
-            self.add()
-        # armazena valor no campo (STO offset)
-        self.emitir(f"STO {offset}")
+        # adiciona offset (sempre, mesmo que seja 0 para consistência)
+        self.ldc(offset)
+        self.add()
+        # armazena valor no campo via acesso indireto (STI)
+        # na pilha: [valor, endereço] -> STI -> []
+        # STI desempilha RT1 (valor) e RT2 (endereço) e armazena RT1 no endereço RT2
+        self.emitir("STI")
 
     def atribuir_array_elemento(self, nome_array):#atribui valor do topo da pilha ao elemento do array
         simbolo = self.ts.buscar(nome_array) #espera na pilha: [valor, índice]

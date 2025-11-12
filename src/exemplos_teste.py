@@ -223,17 +223,11 @@ def teste_08_struct():#teste 8: variáveis do tipo struct
     
     # p.x := 10
     gc.ldc(10)
-    gc.carregar_variavel("p")
-    gc.ldc(0)  # offset do campo x
-    gc.add()
-    gc.emitir("STI")
+    gc.atribuir_campo_struct("p", "x")
     
     # p.y := 20
     gc.ldc(20)
-    gc.carregar_variavel("p")
-    gc.ldc(4)  # offset do campo y
-    gc.add()
-    gc.emitir("STI")
+    gc.atribuir_campo_struct("p", "y")
     
     gc.fim_programa()
     return gc.get_codigo()
