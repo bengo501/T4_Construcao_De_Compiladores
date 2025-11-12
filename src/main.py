@@ -1,76 +1,76 @@
 # main demonstra todas as funcionalidades implementadas
 import sys
 import os
-sys.path.insert(0, os.path.dirname(__file__))
-from exemplos_teste import *
-
+sys.path.insert(0, os.path.dirname(__file__)) #adiciona o diretório atual ao path
+from exemplos_teste import * #importa os exemplos de teste
+#---------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     print("======================================================")
     print("gerador de código - tarefa 4")
     print("demonstração de todas as funcionalidades implementadas")
     print("======================================================")
     print()
-    
+#---------------------------------------------------------------------------------------------------------
     print("======================================================")
     print("teste 1: expressão de atribuição")
     print("======================================================")
-    print(teste_01_expressao_atribuicao())
+    print(teste_01_expressao_atribuicao()) #executa o teste 1
     print()
-    
+#---------------------------------------------------------------------------------------------------------    
     print("======================================================")
     print("teste 2: incremento e decremento")
     print("======================================================")
-    print(teste_02_incremento_decremento())
+    print(teste_02_incremento_decremento()) #executa o teste 2
     print()
-    
+#---------------------------------------------------------------------------------------------------------    
     print("======================================================")
     print("teste 3: operador +=")
     print("======================================================")
-    print(teste_03_operador_mais_igual())
+    print(teste_03_operador_mais_igual()) #executa o teste 3
     print()
-    
+#---------------------------------------------------------------------------------------------------------    
     print("======================================================")
     print("teste 4: operador condicional ?:")
     print("======================================================")
-    print(teste_04_operador_condicional())
+    print(teste_04_operador_condicional()) #executa o teste 4
     print()
-    
+#---------------------------------------------------------------------------------------------------------   
     print("======================================================")
     print("teste 5: comando do-while")
     print("======================================================")
-    print(teste_05_do_while())
+    print(teste_05_do_while()) #executa o teste 5
     print()
-    
+#---------------------------------------------------------------------------------------------------------    
     print("======================================================")
     print("teste 6: comando for")
     print("======================================================")
-    print(teste_06_for())
+    print(teste_06_for()) #executa o teste 6
     print()
-    
+ #---------------------------------------------------------------------------------------------------------   
     print("======================================================")
     print("teste 7: break e continue")
     print("======================================================")
-    print(teste_07_break_continue())
+    print(teste_07_break_continue()) #executa o teste 7
     print()
-    
+#---------------------------------------------------------------------------------------------------------    
     print("======================================================")
     print("teste 8: variáveis do tipo struct")
     print("======================================================")
-    print(teste_08_struct())
+    print(teste_08_struct()) #executa o teste 8
     print()
-    
+ #---------------------------------------------------------------------------------------------------------   
     print("======================================================")
     print("teste 9: arrays de inteiros (bonus)")
     print("======================================================")
-    print(teste_09_array_inteiros())
+    print(teste_09_array_inteiros()) #executa o teste 9
     print()
     
     print("======================================================")
     print("teste 10: struct com array (bonus)")
     print("======================================================")
-    print(teste_10_struct_com_array())
+    print(teste_10_struct_com_array()) #executa o teste 10
     print()
-    
+   #--------------------------------------------------------------------------------------------------------- 
     print("======================================================")
     print("todos os testes foram executados com sucesso!")
     print("======================================================")
