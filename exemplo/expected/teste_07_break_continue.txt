@@ -1,16 +1,3 @@
-teste 7: comandos break e continue
-programa: adicionar comandos break e continue
-
-programa fonte:
-i : integer;
-i := 0;
-while (i < 10) {
-    i++;
-    if (i == 5) continue;
-    if (i == 8) break;
-}
-
-código gerado:
 JMP _start
 _i DS 4
 LDC 0
@@ -42,4 +29,3 @@ JMP R001
 R002: NOP
 _start: NOP
 HALT
-

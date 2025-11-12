@@ -1,0 +1,19 @@
+JMP _start
+_i DS 4
+LDC 0
+STA _i
+JMP R001
+R002: NOP
+LDA _i
+LDC 10
+LES
+R001: NOP
+JZER R003
+LDA _i
+LDC 1
+ADD
+STA _i
+JMP R002
+R003: NOP
+_start: NOP
+HALT

@@ -334,6 +334,44 @@ def teste_10_struct_com_array():
     gc.fim_programa()
     return gc.get_codigo()
 
+def teste_11_array_de_structs():
+    """teste: array de structs (bonus completo)"""
+    gc = GeradorCodigo()
+    gc.inicio_programa()
+    
+    # declara struct Ponto
+    gc.declarar_struct("Ponto", [
+        ("x", "integer", 4),
+        ("y", "integer", 4)
+    ])
+    
+    # declara array de structs e uma variável auxiliar
+    gc.declarar_array_struct("arr", "Ponto", 5)
+    gc.declarar_variavel("x", "integer", 4)
+    
+    # arr[0].x := 10
+    gc.ldc(10)
+    gc.ldc(0)
+    gc.atribuir_campo_struct_array("arr", "x")
+    
+    # arr[0].y := 20
+    gc.ldc(20)
+    gc.ldc(0)
+    gc.atribuir_campo_struct_array("arr", "y")
+    
+    # arr[1].x := 30
+    gc.ldc(30)
+    gc.ldc(1)
+    gc.atribuir_campo_struct_array("arr", "x")
+    
+    # x := arr[0].x
+    gc.ldc(0)
+    gc.carregar_campo_struct_array("arr", "x")
+    gc.atribuir_variavel("x")
+    
+    gc.fim_programa()
+    return gc.get_codigo()
+
 if __name__ == "__main__":
     print("=== teste 1: expressão de atribuição ===")
     print(teste_01_expressao_atribuicao())
@@ -355,4 +393,6 @@ if __name__ == "__main__":
     print(teste_09_array_inteiros())
     print("\n=== teste 10: struct com array (bonus) ===")
     print(teste_10_struct_com_array())
+    print("\n=== teste 11: array de structs (bonus completo) ===")
+    print(teste_11_array_de_structs())
 

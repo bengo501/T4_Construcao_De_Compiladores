@@ -15,7 +15,6 @@ p.scores[2] := 95;
 código gerado:
 JMP _start
 _p DS 16
-_start: NOP
 LDC 25
 LDA _p
 LDC 0
@@ -48,5 +47,6 @@ LDC 4
 MUL
 ADD
 STI
+_start: NOP
 HALT
 

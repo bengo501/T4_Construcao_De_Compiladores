@@ -1,0 +1,20 @@
+JMP _start
+_x DS 4
+_y DS 4
+_z DS 4
+LDC 10
+STA _x
+LDC 5
+STA _y
+LDA _x
+LDA _y
+GRT
+JZER R001
+LDA _x
+JMP R002
+R001: NOP
+LDA _y
+R002: NOP
+STA _z
+_start: NOP
+HALT

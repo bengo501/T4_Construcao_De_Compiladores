@@ -1,0 +1,12 @@
+JMP _start
+_x DS 4
+LDC 10
+STA _x
+LDC 5
+LDA _x
+ADD
+DUP
+STA _x
+DROP
+_start: NOP
+HALT

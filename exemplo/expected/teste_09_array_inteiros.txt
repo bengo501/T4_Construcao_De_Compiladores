@@ -1,14 +1,3 @@
-teste 9: arrays de inteiros (bonus)
-programa: gerar código (declaração e expressões) para arrays de inteiros
-
-programa fonte:
-arr : array [5] of integer;
-arr[0] := 10;
-arr[2] := 20;
-x : integer;
-x := arr[2];
-
-código gerado:
 JMP _start
 _arr DS 20
 _x DS 4
@@ -45,4 +34,3 @@ LDI
 STA _x
 _start: NOP
 HALT
-

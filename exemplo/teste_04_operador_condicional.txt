@@ -14,7 +14,6 @@ JMP _start
 _x DS 4
 _y DS 4
 _z DS 4
-_start: NOP
 LDC 10
 STA _x
 LDC 5
@@ -29,5 +28,6 @@ R001: NOP
 LDA _y
 R002: NOP
 STA _z
+_start: NOP
 HALT
 

@@ -1,0 +1,14 @@
+JMP _start
+_p DS 8
+LDC 10
+LDA _p
+LDC 0
+ADD
+STI
+LDC 20
+LDA _p
+LDC 4
+ADD
+STI
+_start: NOP
+HALT

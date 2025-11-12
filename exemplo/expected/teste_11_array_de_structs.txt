@@ -1,0 +1,55 @@
+JMP _start
+_arr DS 40
+_x DS 4
+LDC 10
+LDC 0
+STA _tmp1
+STA _tmp2
+LDA _arr
+LDA _tmp1
+LDC 8
+MUL
+ADD
+LDC 0
+ADD
+LDA _tmp2
+STI
+LDC 20
+LDC 0
+STA _tmp3
+STA _tmp4
+LDA _arr
+LDA _tmp3
+LDC 8
+MUL
+ADD
+LDC 4
+ADD
+LDA _tmp4
+STI
+LDC 30
+LDC 1
+STA _tmp5
+STA _tmp6
+LDA _arr
+LDA _tmp5
+LDC 8
+MUL
+ADD
+LDC 0
+ADD
+LDA _tmp6
+STI
+LDC 0
+STA _tmp7
+LDA _arr
+LDA _tmp7
+LDC 8
+MUL
+ADD
+LDC 0
+ADD
+LDI
+STA _x
+_start: NOP
+HALT

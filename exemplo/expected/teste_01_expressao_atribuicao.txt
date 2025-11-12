@@ -1,0 +1,10 @@
+JMP _start
+_x DS 4
+_y DS 4
+LDC 5
+DUP
+STA _x
+DUP
+STA _y
+_start: NOP
+HALT

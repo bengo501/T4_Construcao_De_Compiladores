@@ -32,24 +32,24 @@ def exemplo_incremento_decremento():
     gc = GeradorCodigo()
     gc.inicio_programa()
     
-    gc.declarar_variavel("a", "integer", 4)
-    gc.declarar_variavel("b", "integer", 4)
+    gc.declarar_variavel("a", "integer", 4) # declara variável a
+    gc.declarar_variavel("b", "integer", 4) # declara variável b
     
     # pré-incremento: ++a
-    gc.pre_incremento("a")
+    gc.pre_incremento("a") # incrementa a e mantém o valor no topo
     
     # pós-incremento: b++
-    gc.pos_incremento("b")
+    gc.pos_incremento("b") # incrementa b e mantém o valor no topo
     
     # pré-decremento: --a
-    gc.pre_decremento("a")
+    gc.pre_decremento("a") # decrementa a e mantém o valor no topo
     
     # pós-decremento: b--
-    gc.pos_decremento("b")
-    
-    gc.fim_programa()
-    print(gc.get_codigo())
-    print()
+    gc.pos_decremento("b") # decrementa b e mantém o valor no topo
+     
+    gc.fim_programa() 
+    print(gc.get_codigo()) # imprime o código gerado
+    print() 
 
 def exemplo_operador_mais_igual():
     """exemplo: operador +="""
