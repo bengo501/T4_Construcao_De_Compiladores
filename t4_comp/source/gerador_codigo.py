@@ -116,6 +116,56 @@ class GeradorCodigo: #gerador de código para máquina de pilha
     def leq(self): #desempilha RT1 e RT2, empilha 1 se RT2 <= RT1, senão 0
         self.emitir("LEQ")
 
+    def operador_ou_logico(self): #operador || (ou lógico)
+        # espera na pilha: [exp1, exp2] com exp2 no topo
+        # comportamento: se exp1 é verdadeiro, resultado é 1; senão, resultado é exp2
+        # estratégia: salvar exp2, verificar exp1, decidir
+        rotulo_ou_verdadeiro = self.ts.novo_rotulo_cod()
+        rotulo_ou_fim = self.ts.novo_rotulo_cod()
+        
+        # na pilha: [exp1, exp2] com exp2 no topo
+        # salva exp2 temporariamente
+        temp_exp2 = self.novo_temp()
+        self.sta(temp_exp2)  # salva exp2, agora pilha: [exp1]
+        # verifica exp1
+        self.dup()  # duplica exp1 para não perder
+        # se exp1 é verdadeiro (não zero), resultado é 1
+        self.jnz(rotulo_ou_verdadeiro)
+        # exp1 é falso (zero), descarta exp1 e usa exp2
+        self.drop()  # remove exp1
+        self.lda(temp_exp2)  # carrega exp2
+        self.jmp(rotulo_ou_fim)
+        self.emitir_rotulo(rotulo_ou_verdadeiro)
+        # exp1 é verdadeiro, descarta exp1 e empilha 1
+        self.drop()  # remove exp1
+        self.ldc(1)
+        self.emitir_rotulo(rotulo_ou_fim)
+    
+    def operador_e_logico(self): #operador && (e lógico)
+        # espera na pilha: [exp1, exp2] com exp2 no topo
+        # comportamento: se exp1 é falso, resultado é 0; senão, resultado é exp2
+        # estratégia: salvar exp2, verificar exp1, decidir
+        rotulo_e_falso = self.ts.novo_rotulo_cod()
+        rotulo_e_fim = self.ts.novo_rotulo_cod()
+        
+        # na pilha: [exp1, exp2] com exp2 no topo
+        # salva exp2 temporariamente
+        temp_exp2 = self.novo_temp()
+        self.sta(temp_exp2)  # salva exp2, agora pilha: [exp1]
+        # verifica exp1
+        self.dup()  # duplica exp1 para não perder
+        # se exp1 é falso (zero), resultado é 0
+        self.jzer(rotulo_e_falso)
+        # exp1 é verdadeiro (não zero), descarta exp1 e usa exp2
+        self.drop()  # remove exp1
+        self.lda(temp_exp2)  # carrega exp2
+        self.jmp(rotulo_e_fim)
+        self.emitir_rotulo(rotulo_e_falso)
+        # exp1 é falso, descarta exp1 e empilha 0
+        self.drop()  # remove exp1
+        self.ldc(0)
+        self.emitir_rotulo(rotulo_e_fim)
+
     def jmp(self, rotulo): #desvia para rótulo
         self.emitir(f"JMP {rotulo}") 
 
