@@ -4,14 +4,14 @@
 Bernardo Klein, João Pedro Aiolfi, Lucas Brenner e Lucas Lantmann
 
 ## Como Rodar o projeto:
-
+make clean
+chmod +x ./yacc.linux
 make
-
-
 java Parser collatz.cmm > collatz.s
 
-# 1. Monta o .s e cria um executável "collatz"
+sudo apt-get update && sudo apt-get install -y gcc-multilib
+
 gcc -m32 -o collatz collatz.s
 
-# 2. Roda o programa
 ./collatz
+
