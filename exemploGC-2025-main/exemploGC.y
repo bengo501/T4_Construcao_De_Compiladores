@@ -11,13 +11,17 @@
 %token EQ, LEQ, GEQ, NEQ 
 %token AND, OR
 
-%right '='
+%token INC, DEC, MAIS_IGUAL, INTERROGACAO, DOIS_PONTOS
+%token DO, FOR, BREAK, CONTINUE, STRUCT
+
+%right '=' MAIS_IGUAL  /* atribuição (associativa à direita) */
+%right '?' ':'         /* operador ternário */
 %left OR
 %left AND
 %left  '>' '<' EQ LEQ GEQ NEQ
 %left '+' '-'
 %left '*' '/' '%'
-%left '!' 
+%right '!' INC DEC     /* Unários (associativos à direita) */
 
 %type <sval> ID
 %type <sval> LIT
@@ -50,13 +54,14 @@ lcmd : lcmd cmd
 	   |
 	   ;
 	   
-cmd :  ID '=' exp	';' {  System.out.println("\tPOPL %EDX");
-  						   System.out.println("\tMOVL %EDX, _"+$1);
-					     }
-			| '{' lcmd '}' { System.out.println("\t\t# terminou o bloco..."); }
+cmd :  
+
+	exp ';'
+
+		| '{' lcmd '}' { System.out.println("\t\t# terminou o bloco..."); }
 					     
 					       
-      | WRITE '(' LIT ')' ';' { strTab.add($3);
+      	| WRITE '(' LIT ')' ';' { strTab.add($3);
                                 System.out.println("\tMOVL $_str_"+strCount+"Len, %EDX"); 
 				System.out.println("\tMOVL $_str_"+strCount+", %ECX"); 
                                 System.out.println("\tCALL _writeLit"); 
@@ -64,7 +69,7 @@ cmd :  ID '=' exp	';' {  System.out.println("\tPOPL %EDX");
                                 strCount++;
 				}
       
-	  | WRITE '(' LIT 
+	  	| WRITE '(' LIT 
                               { strTab.add($3);
                                 System.out.println("\tMOVL $_str_"+strCount+"Len, %EDX"); 
 				System.out.println("\tMOVL $_str_"+strCount+", %ECX"); 
@@ -79,7 +84,7 @@ cmd :  ID '=' exp	';' {  System.out.println("\tPOPL %EDX");
 			 System.out.println("\tCALL _writeln"); 
                         }
          
-     | READ '(' ID ')' ';'								
+     	| READ '(' ID ')' ';'								
 								{
 									System.out.println("\tPUSHL $_"+$3);
 									System.out.println("\tCALL _read");

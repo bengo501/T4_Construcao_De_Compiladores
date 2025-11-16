@@ -34,6 +34,12 @@ NL  = \n | \r | \r\n
 
 /* operadores */
 
+"++"    { return Parser.INC; }
+"--"    { return Parser.DEC; }
+"+="    { return Parser.MAIS_IGUAL; }
+"?"     { return Parser.INTERROGACAO; }
+":"     { return Parser.DOIS_PONTOS; }
+
 "+" |
 "-" |
 "*" | 
@@ -76,6 +82,12 @@ else   { return Parser.ELSE; }
 true   { return Parser.TRUE; }
 false   { return Parser.FALSE; }
 
+/* novas funcoes */
+do      { return Parser.DO; }
+for     { return Parser.FOR; }
+break   { return Parser.BREAK; }
+continue { return Parser.CONTINUE; }
+struct  { return Parser.STRUCT; }
 
 
 [a-zA-Z]+([a-zA-Z0-9]+)? { yyparser.yylval = new ParserVal(yytext());
