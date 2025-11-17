@@ -261,7 +261,7 @@ cmd :
     | FOR '(' opt_exp ';' {
             /* Ação 1: exp1 (init) - Define rótulos */
             int rot_teste = proxRot;
-            int rot_corpo = proxRot + 1;
+            int rot_corpo = proxRot + 1; // Rótulo do corpo
             int rot_continue = proxRot + 2; 
             int rot_fim = proxRot + 3;
             proxRot += 4; 
@@ -269,14 +269,12 @@ cmd :
             pLoopBreak.push(rot_fim);
             pLoopContinue.push(rot_continue); 
             
-            /* Empilha (Teste, Corpo, Continue, Fim) */
             pRot.push(rot_teste);    
             pRot.push(rot_corpo);    
             pRot.push(rot_continue); 
             pRot.push(rot_fim);      
             
             System.out.printf("\tJMP rot_%02d\n", rot_teste); // 1. Vai para o teste inicial
-            // REMOVIDO: Definição de rot_corpo aqui
         }
           for_cond_opt ';' {
             /* Ação 2: Após exp2 (test) - Testa a condição */
@@ -288,18 +286,20 @@ cmd :
             System.out.printf("rot_%02d:\n", rot_teste); // 2. Define rot_teste
             System.out.println("\tPOPL %EAX");
             System.out.println("\tCMPL $0, %EAX");
-            System.out.printf("\tJE rot_%02d\n", rot_fim);    // 3. JMP para rot_fim (se FALSO)
-            System.out.printf("\tJMP rot_%02d\n", rot_corpo); // 4. JMP para rot_corpo (se VERDADEIRO)
+            
+            // **CORREÇÃO CRÍTICA**: Inverte a lógica. Pula para o FIM se FALSO.
+            System.out.printf("\tJE rot_%02d\n", rot_fim); // 3. JMP para rot_fim (se FALSO)
+            
+            System.out.printf("rot_%02d:\n", rot_corpo); // 4. Define rot_corpo (se verdadeiro, cai aqui)
+            // REMOVIDO: JMP para rot_corpo, pois o fluxo já cai naturalmente.
           }
           opt_exp ')' {
-            /* Ação 3: Após exp3 (incremento) - Fim do Incremento, volta para o Teste */
+            /* Ação 3: Após exp3 (incremento) */
             int rot_teste = (int)pRot.get(pRot.size()-4);
             int rot_continue = (int)pRot.get(pRot.size()-2);
 
             System.out.printf("rot_%02d:\n", rot_continue); // 5. Define rot_continue (Incremento)
             System.out.printf("\tJMP rot_%02d\n", rot_teste); // 6. Pula para rot_teste
-            
-            // REMOVIDO: Definição de rot_corpo aqui.
           }
           cmd {
             /* Ação 4: Após o corpo (cmd) - Loop e Finalização */
@@ -311,6 +311,7 @@ cmd :
             pLoopBreak.pop();
             pLoopContinue.pop();
             
+            // Note que rot_corpo já foi definido na Ação 2
             System.out.printf("\tJMP rot_%02d\n", rot_continue); // 7. Volta para o incremento
             System.out.printf("rot_%02d:\n", rot_fim); // 8. Define rótulo do fim (saída do loop)
           }
@@ -435,11 +436,18 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
       System.out.printf("\tJE rot_%02d\n", pRot.peek()); 
     }
     exp DOIS_PONTOS {
-        System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1); 
-        System.out.printf("rot_%02d:\n", pRot.peek()); 
+        /* Ação 2: Após bloco verdadeiro (exp_2) */
+        
+        // Empurra o resultado de exp_2 (já está na pilha, mas garante que EAX/EBX não contaminem)
+        System.out.println("\tPOPL %EAX"); // Pega o resultado de exp_2
+        System.out.println("\tPUSHL %EAX"); // Empilha de volta
+        
+        System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1); // Pula para R_fim
+        System.out.printf("rot_%02d:\n", pRot.peek()); // Define R_else
     }
-    exp           { 
-        System.out.printf("rot_%02d:\n", pRot.peek()+1); 
+    exp           { /* Ação FINAL (exp_3) */
+        /* Note: exp_3 está na pilha */
+        System.out.printf("rot_%02d:\n", pRot.peek()+1); // Define R_fim
         pRot.pop(); 
     }
 	;
@@ -634,6 +642,8 @@ for_cond_opt : exp
     System.out.println("\tPOPL %EDX");
     System.out.println("\tCMPL %EAX, %EDX");
     System.out.println("\tMOVL $0, %EAX");
+
+    System.out.println("\tXORL %EAX, %EAX"); // Limpa EAX (MOVL $0, %EAX é menos eficiente/verboso)
     
     switch (oprel) {
        case '<':  			System.out.println("\tSETL  %AL"); break;

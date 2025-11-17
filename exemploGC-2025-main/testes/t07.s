@@ -48,6 +48,7 @@ _start:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 	POPL %EAX
@@ -69,6 +70,8 @@ _start:
 	POPL %EAX
 	MOVL (%EAX), %EAX
 	PUSHL %EAX
+	POPL %EAX
+	PUSHL %EAX
 	JMP rot_02
 rot_01:
 	PUSHL $_b
@@ -86,6 +89,8 @@ rot_01:
 	POPL %EAX
 	MOVL (%EAX), %EAX
 	PUSHL %EAX
+	POPL %EAX
+	PUSHL %EAX
 	JMP rot_04
 rot_03:
 	PUSHL $_c
@@ -97,6 +102,7 @@ rot_04:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 rot_02:
@@ -104,6 +110,7 @@ rot_02:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 	POPL %EDX
@@ -129,6 +136,7 @@ rot_02:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETGE %AL
 	PUSHL %EAX
 	POPL %EAX
@@ -150,6 +158,8 @@ rot_02:
 	POPL %EAX
 	MOVL (%EAX), %EAX
 	PUSHL %EAX
+	POPL %EAX
+	PUSHL %EAX
 	JMP rot_06
 rot_05:
 	PUSHL $_b
@@ -167,6 +177,8 @@ rot_05:
 	POPL %EAX
 	MOVL (%EAX), %EAX
 	PUSHL %EAX
+	POPL %EAX
+	PUSHL %EAX
 	JMP rot_08
 rot_07:
 	PUSHL $_c
@@ -178,6 +190,7 @@ rot_08:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETGE %AL
 	PUSHL %EAX
 rot_06:
@@ -185,6 +198,7 @@ rot_06:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETGE %AL
 	PUSHL %EAX
 	POPL %EDX

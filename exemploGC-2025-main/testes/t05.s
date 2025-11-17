@@ -27,13 +27,14 @@ _start:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 rot_01:
 	POPL %EAX
 	CMPL $0, %EAX
 	JE rot_04
-	JMP rot_02
+rot_02:
 	PUSHL $_i
 	POPL %EAX
 	MOVL (%EAX), %EBX
@@ -78,13 +79,14 @@ rot_01:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 rot_05:
 	POPL %EAX
 	CMPL $0, %EAX
 	JE rot_08
-	JMP rot_06
+rot_06:
 rot_07:
 	JMP rot_05
 	MOVL $_str_4Len, %EDX
@@ -126,7 +128,7 @@ rot_09:
 	POPL %EAX
 	CMPL $0, %EAX
 	JE rot_12
-	JMP rot_10
+rot_10:
 rot_11:
 	JMP rot_09
 	PUSHL $_i
@@ -144,6 +146,7 @@ rot_11:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETL  %AL
 	PUSHL %EAX
 	POPL %EAX
@@ -162,6 +165,7 @@ rot_14:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETG  %AL
 	PUSHL %EAX
 	POPL %EAX
@@ -208,13 +212,14 @@ rot_09:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 rot_17:
 	POPL %EAX
 	CMPL $0, %EAX
 	JE rot_20
-	JMP rot_18
+rot_18:
 	PUSHL $_i
 	POPL %EAX
 	MOVL (%EAX), %EBX
@@ -239,13 +244,14 @@ rot_19:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 rot_21:
 	POPL %EAX
 	CMPL $0, %EAX
 	JE rot_24
-	JMP rot_22
+rot_22:
 	PUSHL $_j
 	POPL %EAX
 	MOVL (%EAX), %EBX
@@ -300,13 +306,14 @@ rot_17:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 rot_25:
 	POPL %EAX
 	CMPL $0, %EAX
 	JE rot_28
-	JMP rot_26
+rot_26:
 	PUSHL $_i
 	PUSHL $1
 	POPL %EAX
@@ -333,13 +340,14 @@ rot_27:
 	POPL %EDX
 	CMPL %EAX, %EDX
 	MOVL $0, %EAX
+	XORL %EAX, %EAX
 	SETLE %AL
 	PUSHL %EAX
 rot_29:
 	POPL %EAX
 	CMPL $0, %EAX
 	JE rot_32
-	JMP rot_30
+rot_30:
 	PUSHL $_j
 	PUSHL $1
 	POPL %EAX

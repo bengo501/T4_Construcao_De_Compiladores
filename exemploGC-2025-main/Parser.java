@@ -617,7 +617,7 @@ final static String yyrule[] = {
 "for_cond_opt :",
 };
 
-//#line 546 "exemploGC.y"
+//#line 554 "exemploGC.y"
 
   private Yylex lexer;
 
@@ -709,6 +709,8 @@ final static String yyrule[] = {
     System.out.println("\tPOPL %EDX");
     System.out.println("\tCMPL %EAX, %EDX");
     System.out.println("\tMOVL $0, %EAX");
+
+    System.out.println("\tXORL %EAX, %EAX"); // Limpa EAX (MOVL $0, %EAX é menos eficiente/verboso)
     
     switch (oprel) {
        case '<':  			System.out.println("\tSETL  %AL"); break;
@@ -869,7 +871,7 @@ final static String yyrule[] = {
 	           System.out.println("_str_"+i+"Len = . - _str_"+i);  
 	      }		
    }
-//#line 801 "Parser.java"
+//#line 803 "Parser.java"
 //###############################################################
 // method: yylexdebug : check lexer state
 //###############################################################
@@ -1296,7 +1298,7 @@ case 35:
 {
             /* Ação 1: exp1 (init) - Define rótulos */
             int rot_teste = proxRot;
-            int rot_corpo = proxRot + 1;
+            int rot_corpo = proxRot + 1; /* Rótulo do corpo*/
             int rot_continue = proxRot + 2; 
             int rot_fim = proxRot + 3;
             proxRot += 4; 
@@ -1304,18 +1306,16 @@ case 35:
             pLoopBreak.push(rot_fim);
             pLoopContinue.push(rot_continue); 
             
-            /* Empilha (Teste, Corpo, Continue, Fim) */
             pRot.push(rot_teste);    
             pRot.push(rot_corpo);    
             pRot.push(rot_continue); 
             pRot.push(rot_fim);      
             
             System.out.printf("\tJMP rot_%02d\n", rot_teste); /* 1. Vai para o teste inicial*/
-            /* REMOVIDO: Definição de rot_corpo aqui*/
         }
 break;
 case 36:
-//#line 281 "exemploGC.y"
+//#line 279 "exemploGC.y"
 {
             /* Ação 2: Após exp2 (test) - Testa a condição */
             
@@ -1326,21 +1326,23 @@ case 36:
             System.out.printf("rot_%02d:\n", rot_teste); /* 2. Define rot_teste*/
             System.out.println("\tPOPL %EAX");
             System.out.println("\tCMPL $0, %EAX");
-            System.out.printf("\tJE rot_%02d\n", rot_fim);    /* 3. JMP para rot_fim (se FALSO)*/
-            System.out.printf("\tJMP rot_%02d\n", rot_corpo); /* 4. JMP para rot_corpo (se VERDADEIRO)*/
+            
+            /* **CORREÇÃO CRÍTICA**: Inverte a lógica. Pula para o FIM se FALSO.*/
+            System.out.printf("\tJE rot_%02d\n", rot_fim); /* 3. JMP para rot_fim (se FALSO)*/
+            
+            System.out.printf("rot_%02d:\n", rot_corpo); /* 4. Define rot_corpo (se verdadeiro, cai aqui)*/
+            /* REMOVIDO: JMP para rot_corpo, pois o fluxo já cai naturalmente.*/
           }
 break;
 case 37:
-//#line 294 "exemploGC.y"
+//#line 296 "exemploGC.y"
 {
-            /* Ação 3: Após exp3 (incremento) - Fim do Incremento, volta para o Teste */
+            /* Ação 3: Após exp3 (incremento) */
             int rot_teste = (int)pRot.get(pRot.size()-4);
             int rot_continue = (int)pRot.get(pRot.size()-2);
 
             System.out.printf("rot_%02d:\n", rot_continue); /* 5. Define rot_continue (Incremento)*/
             System.out.printf("\tJMP rot_%02d\n", rot_teste); /* 6. Pula para rot_teste*/
-            
-            /* REMOVIDO: Definição de rot_corpo aqui.*/
           }
 break;
 case 38:
@@ -1355,12 +1357,13 @@ case 38:
             pLoopBreak.pop();
             pLoopContinue.pop();
             
+            /* Note que rot_corpo já foi definido na Ação 2*/
             System.out.printf("\tJMP rot_%02d\n", rot_continue); /* 7. Volta para o incremento*/
             System.out.printf("rot_%02d:\n", rot_fim); /* 8. Define rótulo do fim (saída do loop)*/
           }
 break;
 case 39:
-//#line 318 "exemploGC.y"
+//#line 319 "exemploGC.y"
 {	
 				pRot.push(proxRot);  proxRot += 2;
 								
@@ -1370,40 +1373,40 @@ case 39:
 			}
 break;
 case 40:
-//#line 327 "exemploGC.y"
+//#line 328 "exemploGC.y"
 {
 				System.out.printf("rot_%02d:\n",pRot.peek()+1);
 				pRot.pop();
 			}
 break;
 case 41:
-//#line 334 "exemploGC.y"
+//#line 335 "exemploGC.y"
 {
 					System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1);
 					System.out.printf("rot_%02d:\n",pRot.peek());
 		}
 break;
 case 43:
-//#line 341 "exemploGC.y"
+//#line 342 "exemploGC.y"
 {
 		    System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1);
 				System.out.printf("rot_%02d:\n",pRot.peek());
 				}
 break;
 case 44:
-//#line 348 "exemploGC.y"
+//#line 349 "exemploGC.y"
 { System.out.println("\tPUSHL $"+val_peek(0).sval); }
 break;
 case 45:
-//#line 349 "exemploGC.y"
+//#line 350 "exemploGC.y"
 { System.out.println("\tPUSHL $1"); }
 break;
 case 46:
-//#line 350 "exemploGC.y"
+//#line 351 "exemploGC.y"
 { System.out.println("\tPUSHL $0"); }
 break;
 case 47:
-//#line 351 "exemploGC.y"
+//#line 352 "exemploGC.y"
 { 
            System.out.println("\tPOPL %EAX");     /* Pega o endereço*/
            System.out.println("\tMOVL (%EAX), %EAX"); /* Carrega o valor do endereço*/
@@ -1411,11 +1414,11 @@ case 47:
        }
 break;
 case 49:
-//#line 357 "exemploGC.y"
+//#line 358 "exemploGC.y"
 { gcExpNot(); }
 break;
 case 50:
-//#line 360 "exemploGC.y"
+//#line 361 "exemploGC.y"
 { /* ref empilhou endereço; exp empilhou valor */
           System.out.println("\tPOPL %EAX");     /* EAX = Valor da exp (direita) */
           System.out.println("\tPOPL %EDX");     /* EDX = Endereço da ref (esquerda) */
@@ -1428,7 +1431,7 @@ case 50:
         }
 break;
 case 51:
-//#line 371 "exemploGC.y"
+//#line 372 "exemploGC.y"
 {
          System.out.println("\tPOPL %EAX");     /* Valor (da exp)*/
          System.out.println("\tPOPL %EDX");     /* Endereço (da ref)*/
@@ -1437,7 +1440,7 @@ case 51:
      }
 break;
 case 52:
-//#line 379 "exemploGC.y"
+//#line 380 "exemploGC.y"
 {
         System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
         System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
@@ -1447,7 +1450,7 @@ case 52:
     }
 break;
 case 53:
-//#line 388 "exemploGC.y"
+//#line 389 "exemploGC.y"
 {
         System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
         System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
@@ -1457,7 +1460,7 @@ case 53:
     }
 break;
 case 54:
-//#line 397 "exemploGC.y"
+//#line 398 "exemploGC.y"
 {
         System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
         System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
@@ -1467,7 +1470,7 @@ case 54:
     }
 break;
 case 55:
-//#line 406 "exemploGC.y"
+//#line 407 "exemploGC.y"
 {
         System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
         System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
@@ -1477,59 +1480,59 @@ case 55:
     }
 break;
 case 56:
-//#line 414 "exemploGC.y"
+//#line 415 "exemploGC.y"
 { gcExpArit('+'); }
 break;
 case 57:
-//#line 415 "exemploGC.y"
+//#line 416 "exemploGC.y"
 { gcExpArit('-'); }
 break;
 case 58:
-//#line 416 "exemploGC.y"
+//#line 417 "exemploGC.y"
 { gcExpArit('*'); }
 break;
 case 59:
-//#line 417 "exemploGC.y"
+//#line 418 "exemploGC.y"
 { gcExpArit('/'); }
 break;
 case 60:
-//#line 418 "exemploGC.y"
+//#line 419 "exemploGC.y"
 { gcExpArit('%'); }
 break;
 case 61:
-//#line 420 "exemploGC.y"
+//#line 421 "exemploGC.y"
 { gcExpRel('>'); }
 break;
 case 62:
-//#line 421 "exemploGC.y"
+//#line 422 "exemploGC.y"
 { gcExpRel('<'); }
 break;
 case 63:
-//#line 422 "exemploGC.y"
+//#line 423 "exemploGC.y"
 { gcExpRel(EQ); }
 break;
 case 64:
-//#line 423 "exemploGC.y"
+//#line 424 "exemploGC.y"
 { gcExpRel(LEQ); }
 break;
 case 65:
-//#line 424 "exemploGC.y"
+//#line 425 "exemploGC.y"
 { gcExpRel(GEQ); }
 break;
 case 66:
-//#line 425 "exemploGC.y"
+//#line 426 "exemploGC.y"
 { gcExpRel(NEQ); }
 break;
 case 67:
-//#line 427 "exemploGC.y"
+//#line 428 "exemploGC.y"
 { gcExpLog(OR); }
 break;
 case 68:
-//#line 428 "exemploGC.y"
+//#line 429 "exemploGC.y"
 { gcExpLog(AND); }
 break;
 case 69:
-//#line 431 "exemploGC.y"
+//#line 432 "exemploGC.y"
 { 
       pRot.push(proxRot); proxRot += 2; 
       System.out.println("\tPOPL %EAX");
@@ -1538,21 +1541,28 @@ case 69:
     }
 break;
 case 70:
-//#line 437 "exemploGC.y"
+//#line 438 "exemploGC.y"
 {
-        System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1); 
-        System.out.printf("rot_%02d:\n", pRot.peek()); 
+        /* Ação 2: Após bloco verdadeiro (exp_2) */
+        
+        /* Empurra o resultado de exp_2 (já está na pilha, mas garante que EAX/EBX não contaminem)*/
+        System.out.println("\tPOPL %EAX"); /* Pega o resultado de exp_2*/
+        System.out.println("\tPUSHL %EAX"); /* Empilha de volta*/
+        
+        System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1); /* Pula para R_fim*/
+        System.out.printf("rot_%02d:\n", pRot.peek()); /* Define R_else*/
     }
 break;
 case 71:
-//#line 441 "exemploGC.y"
-{ 
-        System.out.printf("rot_%02d:\n", pRot.peek()+1); 
+//#line 448 "exemploGC.y"
+{ /* Ação FINAL (exp_3) */
+        /* Note: exp_3 está na pilha */
+        System.out.printf("rot_%02d:\n", pRot.peek()+1); /* Define R_fim*/
         pRot.pop(); 
     }
 break;
 case 74:
-//#line 456 "exemploGC.y"
+//#line 464 "exemploGC.y"
 {
           /* Var simples. Empilha o endereço. */
           TS_entry nodo = ts.pesquisa(val_peek(0).sval);
@@ -1561,7 +1571,7 @@ case 74:
       }
 break;
 case 75:
-//#line 462 "exemploGC.y"
+//#line 470 "exemploGC.y"
 {
           /* Campo de struct (ex: p1.x) */
           String id_var = val_peek(2).sval;
@@ -1583,7 +1593,7 @@ case 75:
       }
 break;
 case 76:
-//#line 482 "exemploGC.y"
+//#line 490 "exemploGC.y"
 {
           String id_var = val_peek(3).sval;
           
@@ -1599,7 +1609,7 @@ case 76:
       }
 break;
 case 77:
-//#line 496 "exemploGC.y"
+//#line 504 "exemploGC.y"
 {
           TS_entry nodo_var = ts.pesquisa(val_peek(5).sval); /* p1*/
           if (nodo_var == null) yyerror("(sem) variavel >" + val_peek(5).sval + "< nao declarada");
@@ -1620,7 +1630,7 @@ case 77:
       }
 break;
 case 78:
-//#line 515 "exemploGC.y"
+//#line 523 "exemploGC.y"
 {
           TS_entry nodo_var = ts.pesquisa(val_peek(5).sval); /* lista*/
           if (nodo_var == null) yyerror("(sem) array >" + val_peek(5).sval + "< nao declarado");
@@ -1645,10 +1655,10 @@ case 78:
       	}
 break;
 case 80:
-//#line 542 "exemploGC.y"
+//#line 550 "exemploGC.y"
 { System.out.println("\tPUSHL $1"); }
 break;
-//#line 1575 "Parser.java"
+//#line 1585 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####
