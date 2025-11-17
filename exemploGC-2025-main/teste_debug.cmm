@@ -33,7 +33,6 @@ void main() {
     write("a: ", a);
     write("b: ", b);
     write("c: ", c);
-    write("");
 
     write("--- DEBUG CONCLUIDO ---");
 }

@@ -259,50 +259,60 @@ cmd :
 			}
 
     | FOR '(' opt_exp ';' {
-				/* Ação 1: exp1 (init) - Define rótulos */
-				int rot_teste = proxRot;
-				int rot_continue = proxRot + 1; // Incremento
-				int rot_fim = proxRot + 2;
-				int rot_corpo = proxRot + 3; 
-				proxRot += 4; // Avança o contador global
-				
-				pLoopBreak.push(rot_fim);
-				pLoopContinue.push(rot_continue); 
-				
-				pRot.push(rot_fim);      // 3
-				pRot.push(rot_continue); // 2
-				pRot.push(rot_corpo);    // 1 (Corpo)
-				pRot.push(rot_teste);    // 0 (Teste)
-				
-				System.out.printf("\tJMP rot_%02d\n", rot_teste); 
-				System.out.printf("rot_%02d:\n", rot_corpo);    
-          }
+            /* Ação 1: exp1 (init) - Define rótulos */
+            int rot_teste = proxRot;
+            int rot_corpo = proxRot + 1;
+            int rot_continue = proxRot + 2; 
+            int rot_fim = proxRot + 3;
+            proxRot += 4; 
+            
+            pLoopBreak.push(rot_fim);
+            pLoopContinue.push(rot_continue); 
+            
+            /* Empilha (Teste, Corpo, Continue, Fim) */
+            pRot.push(rot_teste);    
+            pRot.push(rot_corpo);    
+            pRot.push(rot_continue); 
+            pRot.push(rot_fim);      
+            
+            System.out.printf("\tJMP rot_%02d\n", rot_teste); // 1. Vai para o teste inicial
+            // REMOVIDO: Definição de rot_corpo aqui
+        }
           for_cond_opt ';' {
-			/* Ação 2: Após exp2 (test) */
-			System.out.printf("rot_%02d:\n", pRot.get(pRot.size()-2)); // Define rot_teste
+            /* Ação 2: Após exp2 (test) - Testa a condição */
+            
+            int rot_teste = (int)pRot.get(pRot.size()-4);
+            int rot_corpo = (int)pRot.get(pRot.size()-3);
+            int rot_fim = (int)pRot.get(pRot.size()-1); 
+            
+            System.out.printf("rot_%02d:\n", rot_teste); // 2. Define rot_teste
             System.out.println("\tPOPL %EAX");
             System.out.println("\tCMPL $0, %EAX");
-            System.out.printf("\tJE rot_%02d\n", pRot.get(pRot.size()-4)); // JMP para rot_fim (se F)
-			System.out.printf("\tJMP rot_%02d\n", pRot.get(pRot.size()-3)); // JMP para rot_corpo (se V)
+            System.out.printf("\tJE rot_%02d\n", rot_fim);    // 3. JMP para rot_fim (se FALSO)
+            System.out.printf("\tJMP rot_%02d\n", rot_corpo); // 4. JMP para rot_corpo (se VERDADEIRO)
           }
           opt_exp ')' {
-			/* Ação 3: Após exp3 (incremento) */
-			System.out.printf("rot_%02d:\n", pRot.get(pRot.size()-3)); // Define rot_continue
-			System.out.printf("\tJMP rot_%02d\n", pRot.get(pRot.size()-2)); // Pula para rot_teste
+            /* Ação 3: Após exp3 (incremento) - Fim do Incremento, volta para o Teste */
+            int rot_teste = (int)pRot.get(pRot.size()-4);
+            int rot_continue = (int)pRot.get(pRot.size()-2);
+
+            System.out.printf("rot_%02d:\n", rot_continue); // 5. Define rot_continue (Incremento)
+            System.out.printf("\tJMP rot_%02d\n", rot_teste); // 6. Pula para rot_teste
+            
+            // REMOVIDO: Definição de rot_corpo aqui.
           }
           cmd {
-			/* Ação 4: Após o corpo (cmd) - CORRIGINDO A PILHA */
-			System.out.printf("rot_%02d:\n", pRot.pop()); // Pop rot_corpo e define rótulo
-			
-			int rot_teste = pRot.pop(); 
-			int rot_continue = pRot.pop(); 
-			int rot_fim = pRot.pop();
-			
-			pLoopBreak.pop();
-			pLoopContinue.pop();
-			
-			System.out.printf("\tJMP rot_%02d\n", rot_continue); // Pula p/ incremento
-			System.out.printf("rot_%02d:\n", rot_fim); // Define rótulo do fim
+            /* Ação 4: Após o corpo (cmd) - Loop e Finalização */
+            int rot_teste = pRot.pop();  
+            int rot_corpo = pRot.pop();  
+            int rot_continue = pRot.pop(); 
+            int rot_fim = pRot.pop();    
+            
+            pLoopBreak.pop();
+            pLoopContinue.pop();
+            
+            System.out.printf("\tJMP rot_%02d\n", rot_continue); // 7. Volta para o incremento
+            System.out.printf("rot_%02d:\n", rot_fim); // 8. Define rótulo do fim (saída do loop)
           }
 							
     | IF '(' exp {	
@@ -346,13 +356,17 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
     | '(' exp	')' 
     | '!' exp       { gcExpNot(); }
 
-    | ID MAIS_IGUAL exp {
-          System.out.println("\tPOPL %EAX");     /* Valor da exp */
-          System.out.println("\tMOVL _" + $1 + ", %EDX"); /* Valor da var */
-          System.out.println("\tADDL %EAX, %EDX");   /* Calcula ID = ID + exp */
-          System.out.println("\tMOVL %EDX, _" + $1); /* Salva o novo valor */
-          System.out.println("\tPUSHL %EDX");    /* PUSH O NOVO VALOR para encadear */
-          }
+    /* ** CORREÇÃO: Usa 'ref' para endereço e implementa += ** */
+    | ref MAIS_IGUAL exp { /* ref empilhou endereço; exp empilhou valor */
+          System.out.println("\tPOPL %EAX");     /* EAX = Valor da exp (direita) */
+          System.out.println("\tPOPL %EDX");     /* EDX = Endereço da ref (esquerda) */
+          
+          System.out.println("\tMOVL (%EDX), %EBX"); /* EBX = Valor da ref (lê o valor no endereço) */
+          System.out.println("\tADDL %EAX, %EBX");   /* EBX = Valor da ref + Valor da exp */
+          
+          System.out.println("\tMOVL %EBX, (%EDX)"); /* Salva o novo valor no endereço */
+          System.out.println("\tPUSHL %EBX");    /* PUSH O NOVO VALOR para encadear */
+        }
 
     | ref '=' exp %prec AND {
          System.out.println("\tPOPL %EAX");     // Valor (da exp)
@@ -361,33 +375,41 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
          System.out.println("\tPUSHL %EAX");    // Empurra o valor de volta
      }
  
-    | INC ID {
-          System.out.println("\tMOVL _" + $2 + ", %EAX");
-          System.out.println("\tADDL $1, %EAX");
-          System.out.println("\tMOVL %EAX, _" + $2);
-          System.out.println("\tPUSHL %EAX");
-      }
+    /* ** CORREÇÃO: Pré-Incremento (++ref) ** */
+    | INC ref {
+        System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
+        System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
+        System.out.println("\tADDL $1, %EBX");     /* EBX = Valor + 1 (Incrementa) */
+        System.out.println("\tMOVL %EBX, (%EAX)"); /* Salva o novo valor no endereço */
+        System.out.println("\tPUSHL %EBX");     /* PUSHL o NOVO valor */
+    }
  
-    | ID INC {
-          System.out.println("\tMOVL _" + $1 + ", %EAX");
-          System.out.println("\tPUSHL %EAX"); /* Empurra valor antigo */
-          System.out.println("\tADDL $1, %EAX");
-          System.out.println("\tMOVL %EAX, _" + $1);
-      }
+    /* ** CORREÇÃO: Pós-Incremento (ref++) ** */
+    | ref INC {
+        System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
+        System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
+        System.out.println("\tPUSHL %EBX");     /* PUSHL o VALOR ANTIGO */
+        System.out.println("\tADDL $1, %EBX");     /* EBX = Valor + 1 (Incrementa) */
+        System.out.println("\tMOVL %EBX, (%EAX)"); /* Salva o novo valor no endereço */
+    }
  
-    | DEC ID {
-          System.out.println("\tMOVL _" + $2 + ", %EAX");
-          System.out.println("\tSUBL $1, %EAX");
-          System.out.println("\tMOVL %EAX, _" + $2);
-          System.out.println("\tPUSHL %EAX");
-      }
+    /* ** CORREÇÃO: Pré-Decremento (--ref) ** */
+    | DEC ref {
+        System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
+        System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
+        System.out.println("\tSUBL $1, %EBX");     /* EBX = Valor - 1 (Decrementa) */
+        System.out.println("\tMOVL %EBX, (%EAX)"); /* Salva o novo valor no endereço */
+        System.out.println("\tPUSHL %EBX");     /* PUSHL o NOVO valor */
+    }
  
-    | ID DEC {
-          System.out.println("\tMOVL _" + $1 + ", %EAX");
-          System.out.println("\tPUSHL %EAX"); /* Empurra valor antigo */
-          System.out.println("\tSUBL $1, %EAX");
-          System.out.println("\tMOVL %EAX, _" + $1);
-      }
+    /* ** CORREÇÃO: Pós-Decremento (ref--) ** */
+    | ref DEC {
+        System.out.println("\tPOPL %EAX");      /* EAX = Endereço da ref */
+        System.out.println("\tMOVL (%EAX), %EBX"); /* EBX = Valor atual */
+        System.out.println("\tPUSHL %EBX");     /* PUSHL o VALOR ANTIGO */
+        System.out.println("\tSUBL $1, %EBX");     /* EBX = Valor - 1 (Decrementa) */
+        System.out.println("\tMOVL %EBX, (%EAX)"); /* Salva o novo valor no endereço */
+    }
 
 		| exp '+' exp		{ gcExpArit('+'); }
 		| exp '-' exp		{ gcExpArit('-'); }
@@ -405,22 +427,22 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
 		| exp OR exp		{ gcExpLog(OR); }											
 		| exp AND exp		{ gcExpLog(AND); }											
 
-	| exp '?' { 
-      pRot.push(proxRot); proxRot += 2; // Reserva R_else e R_fim
+	/* ** CORREÇÃO: Usa tokens e lógica correta ** */
+	| exp INTERROGACAO { 
+      pRot.push(proxRot); proxRot += 2; 
       System.out.println("\tPOPL %EAX");
       System.out.println("\tCMPL $0, %EAX");
-      /* Pula para R_else se Falso (Zero) */
       System.out.printf("\tJE rot_%02d\n", pRot.peek()); 
     }
-    exp ':' {
-        System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1); // Pula para R_fim
-        System.out.printf("rot_%02d:\n", pRot.peek()); // Define R_else
+    exp DOIS_PONTOS {
+        System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1); 
+        System.out.printf("rot_%02d:\n", pRot.peek()); 
     }
-    exp     { /* Ação FINAL */
-        System.out.printf("rot_%02d:\n", pRot.peek()+1); // Define R_fim
-        pRot.pop();
+    exp           { 
+        System.out.printf("rot_%02d:\n", pRot.peek()+1); 
+        pRot.pop(); 
     }
-	;		
+	;
 
 
 opt_exp : exp
