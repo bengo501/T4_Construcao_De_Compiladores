@@ -1,8 +1,9 @@
-	
 %{
   import java.io.*;
   import java.util.ArrayList;
   import java.util.Stack;
+  import java.util.Map;
+  import java.util.HashMap;
 %}
  
 
@@ -14,19 +15,23 @@
 %token INC, DEC, MAIS_IGUAL, INTERROGACAO, DOIS_PONTOS
 %token DO, FOR, BREAK, CONTINUE, STRUCT
 
-%right '=' MAIS_IGUAL  /* atribuição (associativa à direita) */
-%right '?' ':'         /* operador ternário */
+%right '=' MAIS_IGUAL
+%right '?' ':'  
 %left OR
 %left AND
 %left  '>' '<' EQ LEQ GEQ NEQ
 %left '+' '-'
 %left '*' '/' '%'
-%right '!' INC DEC     /* Unários (associativos à direita) */
+%right '!' INC DEC
 
 %type <sval> ID
 %type <sval> LIT
 %type <sval> NUM
 %type <ival> type
+
+/* Tipos para as novas regras de struct */
+%type <obj> l_campos
+%type <obj> campo
 
 
 %%
@@ -39,23 +44,118 @@ mainF : VOID MAIN '(' ')'   { System.out.println("_start:"); }
 
 dList : decl dList | ;
 
-decl : type ID ';' {  TS_entry nodo = ts.pesquisa($2);
-    	                if (nodo != null) 
-                            yyerror("(sem) variavel >" + $2 + "< jah declarada");
-                        else ts.insert(new TS_entry($2, $1)); }
-      ;
-
 type : INT    { $$ = INT; }
      | FLOAT  { $$ = FLOAT; }
      | BOOL   { $$ = BOOL; }
      ;
+
+campo : type ID ';' {
+            /* campo simples (int x) */
+            $$ = new TS_entry($2, $1, 0); 
+        }
+      | type ID '[' NUM ']' ';' {
+            /* campo array - (int notas[4]) */
+            int n_elem = Integer.parseInt($4);
+            $$ = new TS_entry($2, $1, 0, n_elem);
+        }
+      ;
+
+l_campos : l_campos campo
+           {
+               Map<String, TS_entry> campos = (Map<String, TS_entry>)$1;
+               TS_entry novo_campo = (TS_entry)$2;
+
+               if (campos.containsKey(novo_campo.id)) {
+                   yyerror("(sem) campo >" + novo_campo.id + "< duplicado no struct");
+               } else {
+                   int offset = 0;
+                   for (TS_entry c : campos.values()) {
+                       offset += c.getTamanho();
+                   }
+                   novo_campo.offset = offset;
+                   campos.put(novo_campo.id, novo_campo);
+               }
+               $$ = $1; /* Retorna o HashMap atualizado */
+           }
+         | { 
+               $$ = new HashMap<String, TS_entry>(); 
+           }
+         ;
+decl : 
+      type ID ';' {
+           if (ts.pesquisa($2) != null) {
+               yyerror("(sem) variavel >" + $2 + "< jah declarada");
+           } else {
+               ts.insert(new TS_entry($2, $1));
+           }
+      }
+/* Declaração de Array (ex: int v[10];) */
+      | type ID '[' NUM ']' ';' {
+           String id_var = $2;
+           int tipo_base = $1;
+           int n_elem = Integer.parseInt($4);
+           
+           if (ts.pesquisa(id_var) != null) {
+               yyerror("(sem) variavel >" + id_var + "< jah declarada");
+           } else {
+               /* Construtor de array simples: (id, nElem, tipoBase, tipoStruct, tamanhoElem) */
+               ts.insert(new TS_entry(id_var, n_elem, tipo_base, null, 4));
+           }
+       }
+     /* * BÔNUS (Req 10): Declaração de Array de Struct (ex: Ponto p[10];) */
+      | ID ID '[' NUM ']' ';' {
+           String id_tipo = $1;
+           String id_var = $2;
+           int n_elem = Integer.parseInt($4);
+           
+           TS_entry nodo_tipo = ts.pesquisaTipo(id_tipo);
+           if (nodo_tipo == null) yyerror("(sem) tipo >" + id_tipo + "< nao conhecido");
+           
+           if (ts.pesquisa(id_var) != null) {
+               yyerror("(sem) variavel >" + id_var + "< jah declarada");
+           } else {
+               /* Construtor de array de struct: (id, nElem, tipoBase, tipoStruct, tamanhoElem) */
+               ts.insert(new TS_entry(id_var, n_elem, Parser.STRUCT, id_tipo, nodo_tipo.getTamanho()));
+             }
+         }
+      ;
+      | STRUCT ID '{' l_campos '}' ';' {
+           /* Caso 2: Definição de tipo struct (struct Ponto { ... };) */
+           Map<String, TS_entry> campos = (Map<String, TS_entry>)$4;
+           int tamanho_total = 0;
+           for (TS_entry campo : campos.values()) {
+               tamanho_total += campo.getTamanho();
+           }
+           
+           if (ts.pesquisaTipo($2) != null) {
+               yyerror("(sem) tipo struct >" + $2 + "< jah declarado");
+           } else {
+               ts.insert_tipo(new TS_entry($2, tamanho_total, campos));
+           }
+       }
+      | ID ID ';' {
+            /* Variável struct (Ponto p1;) */
+            String id_tipo = $1;
+            String id_var = $2;
+            
+            TS_entry nodo_tipo = ts.pesquisaTipo(id_tipo);
+            TS_entry nodo_var = ts.pesquisa(id_var);
+            
+            if (nodo_var != null) {
+                yyerror("(sem) variavel >" + id_var + "< jah declarada");
+            } else if (nodo_tipo == null) {
+                yyerror("(sem) tipo >" + id_tipo + "< nao conhecido");
+            } else {
+              ts.insert(new TS_entry(id_var, nodo_tipo));          }
+       }
+     ;
+
 
 lcmd : lcmd cmd
 	   |
 	   ;
 	   
 cmd :  
-
 	exp ';'
 
 		| '{' lcmd '}' { System.out.println("\t\t# terminou o bloco..."); }
@@ -84,52 +184,148 @@ cmd :
 			 System.out.println("\tCALL _writeln"); 
                         }
          
-     	| READ '(' ID ')' ';'								
-								{
-									System.out.println("\tPUSHL $_"+$3);
-									System.out.println("\tCALL _read");
-									System.out.println("\tPOPL %EDX");
-									System.out.println("\tMOVL %EAX, (%EDX)");
-									
-								}
+     	| READ '(' ref ')' ';' {
+           /* 'ref' ($3) já empilhou o endereço correto */
+           System.out.println("\tCALL _read");
+           System.out.println("\tPOPL %EDX");
+           System.out.println("\tMOVL %EAX, (%EDX)");
+       }
          
     | WHILE {
-					pRot.push(proxRot);  proxRot += 2;
-					System.out.printf("rot_%02d:\n",pRot.peek());
-				  } 
-			 '(' exp ')' {
-			 							System.out.println("\tPOPL %EAX   # desvia se falso...");
-											System.out.println("\tCMPL $0, %EAX");
-											System.out.printf("\tJE rot_%02d\n", (int)pRot.peek()+1);
-										} 
-				cmd		{
-				  		System.out.printf("\tJMP rot_%02d   # terminou cmd na linha de cima\n", pRot.peek());
-							System.out.printf("rot_%02d:\n",(int)pRot.peek()+1);
-							pRot.pop();
-							}  
-							
-			| IF '(' exp {	
-											pRot.push(proxRot);  proxRot += 2;
-															
-											System.out.println("\tPOPL %EAX");
-											System.out.println("\tCMPL $0, %EAX");
-											System.out.printf("\tJE rot_%02d\n", pRot.peek());
-										}
-								')' cmd 
+				pRot.push(proxRot);  proxRot += 2;
+				int rot_inicio = pRot.peek();
+				int rot_fim = rot_inicio + 1;
+				
+				pLoopBreak.push(rot_fim);
+				pLoopContinue.push(rot_inicio);
+				
+				System.out.printf("rot_%02d:\n", rot_inicio);
+			} 
 
-             restoIf {
-											System.out.printf("rot_%02d:\n",pRot.peek()+1);
-											pRot.pop();
-										}
-     ;
+			'(' exp ')' {
+					System.out.println("\tPOPL %EAX   # desvia se falso...");
+					System.out.println("\tCMPL $0, %EAX");
+					System.out.printf("\tJE rot_%02d\n", (int)pRot.peek()+1); // Pula para rot_fim
+			} 
+			cmd	{
+				/* Fim do corpo */
+				System.out.printf("\tJMP rot_%02d\n", pRot.peek()); // Pula para rot_inicio
+				System.out.printf("rot_%02d:\n",(int)pRot.peek()+1); // Define rot_fim
+				
+				/* Limpa pilhas */
+				pRot.pop();
+				pLoopBreak.pop();
+				pLoopContinue.pop();
+			}
+
+    | DO {
+				/* Prepara rótulos de início (continue) e fim (break) */
+				int rot_inicio = proxRot;
+				int rot_fim = proxRot + 1;
+				proxRot += 2;
+				
+				pRot.push(rot_inicio); // Salva rótulo de início para o JNE
+				
+				/* Salva rótulos para break/continue */
+				pLoopBreak.push(rot_fim);
+				pLoopContinue.push(rot_inicio);
+				
+				System.out.printf("rot_%02d:\n", rot_inicio);
+			}
+
+			cmd WHILE '(' exp ')' ';' {
+				/* Teste da condição */
+				System.out.println("\tPOPL %EAX");
+				System.out.println("\tCMPL $0, %EAX");
+				System.out.printf("\tJNE rot_%02d\n", pRot.pop()); // Pula para rot_inicio se V
+				
+				/* Define rótulo de fim (break) e limpa pilhas */
+				System.out.printf("rot_%02d:\n", pLoopBreak.pop());
+				pLoopContinue.pop();
+			}
+
+    | BREAK ';' {
+				if (pLoopBreak.empty())
+					yyerror("(sem) comando break fora de loop");
+				else
+					System.out.printf("\tJMP rot_%02d\n", pLoopBreak.peek());
+			}
+
+    | CONTINUE ';' {
+				if (pLoopContinue.empty())
+					yyerror("(sem) comando continue fora de loop");
+				else
+					System.out.printf("\tJMP rot_%02d\n", pLoopContinue.peek());
+			}
+
+    | FOR '(' opt_exp ';' {
+				/* Ação 1: exp1 (init) - Define rótulos */
+				int rot_teste = proxRot;
+				int rot_continue = proxRot + 1; // Incremento
+				int rot_fim = proxRot + 2;
+				int rot_corpo = proxRot + 3; 
+				proxRot += 4; // Avança o contador global
+				
+				pLoopBreak.push(rot_fim);
+				pLoopContinue.push(rot_continue); 
+				
+				pRot.push(rot_fim);      // 3
+				pRot.push(rot_continue); // 2
+				pRot.push(rot_corpo);    // 1 (Corpo)
+				pRot.push(rot_teste);    // 0 (Teste)
+				
+				System.out.printf("\tJMP rot_%02d\n", rot_teste); 
+				System.out.printf("rot_%02d:\n", rot_corpo);    
+          }
+          for_cond_opt ';' {
+			/* Ação 2: Após exp2 (test) */
+			System.out.printf("rot_%02d:\n", pRot.get(pRot.size()-2)); // Define rot_teste
+            System.out.println("\tPOPL %EAX");
+            System.out.println("\tCMPL $0, %EAX");
+            System.out.printf("\tJE rot_%02d\n", pRot.get(pRot.size()-4)); // JMP para rot_fim (se F)
+			System.out.printf("\tJMP rot_%02d\n", pRot.get(pRot.size()-3)); // JMP para rot_corpo (se V)
+          }
+          opt_exp ')' {
+			/* Ação 3: Após exp3 (incremento) */
+			System.out.printf("rot_%02d:\n", pRot.get(pRot.size()-3)); // Define rot_continue
+			System.out.printf("\tJMP rot_%02d\n", pRot.get(pRot.size()-2)); // Pula para rot_teste
+          }
+          cmd {
+			/* Ação 4: Após o corpo (cmd) - CORRIGINDO A PILHA */
+			System.out.printf("rot_%02d:\n", pRot.pop()); // Pop rot_corpo e define rótulo
+			
+			int rot_teste = pRot.pop(); 
+			int rot_continue = pRot.pop(); 
+			int rot_fim = pRot.pop();
+			
+			pLoopBreak.pop();
+			pLoopContinue.pop();
+			
+			System.out.printf("\tJMP rot_%02d\n", rot_continue); // Pula p/ incremento
+			System.out.printf("rot_%02d:\n", rot_fim); // Define rótulo do fim
+          }
+							
+    | IF '(' exp {	
+				pRot.push(proxRot);  proxRot += 2;
+								
+				System.out.println("\tPOPL %EAX");
+				System.out.println("\tCMPL $0, %EAX");
+				System.out.printf("\tJE rot_%02d\n", pRot.peek());
+			}
+			')' cmd 
+
+            restoIf {
+				System.out.printf("rot_%02d:\n",pRot.peek()+1);
+				pRot.pop();
+			}
+     
      
      
 restoIf : ELSE  {
-											System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1);
-											System.out.printf("rot_%02d:\n",pRot.peek());
-								
-										} 							
-							cmd  
+					System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1);
+					System.out.printf("rot_%02d:\n",pRot.peek());
+		} 	
+		cmd  
 							
 							
 		| {
@@ -142,10 +338,57 @@ restoIf : ELSE  {
 exp :  NUM  { System.out.println("\tPUSHL $"+$1); } 
     |  TRUE  { System.out.println("\tPUSHL $1"); } 
     |  FALSE  { System.out.println("\tPUSHL $0"); }      
- 		| ID   { System.out.println("\tPUSHL _"+$1); }
+ 		| ref  { 
+           System.out.println("\tPOPL %EAX");     // Pega o endereço
+           System.out.println("\tMOVL (%EAX), %EAX"); // Carrega o valor do endereço
+           System.out.println("\tPUSHL %EAX");    // Empilha o valor
+       }
     | '(' exp	')' 
     | '!' exp       { gcExpNot(); }
-     
+
+    | ID MAIS_IGUAL exp {
+          System.out.println("\tPOPL %EAX");     /* Valor da exp */
+          System.out.println("\tMOVL _" + $1 + ", %EDX"); /* Valor da var */
+          System.out.println("\tADDL %EAX, %EDX");   /* Calcula ID = ID + exp */
+          System.out.println("\tMOVL %EDX, _" + $1); /* Salva o novo valor */
+          System.out.println("\tPUSHL %EDX");    /* PUSH O NOVO VALOR para encadear */
+          }
+
+    | ref '=' exp %prec AND {
+         System.out.println("\tPOPL %EAX");     // Valor (da exp)
+         System.out.println("\tPOPL %EDX");     // Endereço (da ref)
+         System.out.println("\tMOVL %EAX, (%EDX)"); // Salva Valor no Endereço
+         System.out.println("\tPUSHL %EAX");    // Empurra o valor de volta
+     }
+ 
+    | INC ID {
+          System.out.println("\tMOVL _" + $2 + ", %EAX");
+          System.out.println("\tADDL $1, %EAX");
+          System.out.println("\tMOVL %EAX, _" + $2);
+          System.out.println("\tPUSHL %EAX");
+      }
+ 
+    | ID INC {
+          System.out.println("\tMOVL _" + $1 + ", %EAX");
+          System.out.println("\tPUSHL %EAX"); /* Empurra valor antigo */
+          System.out.println("\tADDL $1, %EAX");
+          System.out.println("\tMOVL %EAX, _" + $1);
+      }
+ 
+    | DEC ID {
+          System.out.println("\tMOVL _" + $2 + ", %EAX");
+          System.out.println("\tSUBL $1, %EAX");
+          System.out.println("\tMOVL %EAX, _" + $2);
+          System.out.println("\tPUSHL %EAX");
+      }
+ 
+    | ID DEC {
+          System.out.println("\tMOVL _" + $1 + ", %EAX");
+          System.out.println("\tPUSHL %EAX"); /* Empurra valor antigo */
+          System.out.println("\tSUBL $1, %EAX");
+          System.out.println("\tMOVL %EAX, _" + $1);
+      }
+
 		| exp '+' exp		{ gcExpArit('+'); }
 		| exp '-' exp		{ gcExpArit('-'); }
 		| exp '*' exp		{ gcExpArit('*'); }
@@ -161,9 +404,121 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
 												
 		| exp OR exp		{ gcExpLog(OR); }											
 		| exp AND exp		{ gcExpLog(AND); }											
-		
-		;							
 
+	| exp '?' { 
+      pRot.push(proxRot); proxRot += 2; // Reserva R_else e R_fim
+      System.out.println("\tPOPL %EAX");
+      System.out.println("\tCMPL $0, %EAX");
+      /* Pula para R_else se Falso (Zero) */
+      System.out.printf("\tJE rot_%02d\n", pRot.peek()); 
+    }
+    exp ':' {
+        System.out.printf("\tJMP rot_%02d\n", pRot.peek()+1); // Pula para R_fim
+        System.out.printf("rot_%02d:\n", pRot.peek()); // Define R_else
+    }
+    exp     { /* Ação FINAL */
+        System.out.printf("rot_%02d:\n", pRot.peek()+1); // Define R_fim
+        pRot.pop();
+    }
+	;		
+
+
+opt_exp : exp
+        | /* Vazio */
+        ;	
+
+/* * NOVA REGRA (Req 8 & 9): 'ref' (Referência)
+ * Trata acesso a ID simples, ID.ID (struct) e ID[exp] (array)
+ * Esta regra deixa o ENDEREÇO do dado na pilha.
+ */
+ref : ID {
+          /* Var simples. Empilha o endereço. */
+          TS_entry nodo = ts.pesquisa($1);
+          if (nodo == null) yyerror("(sem) variavel >" + $1 + "< nao declarada");
+          System.out.println("\tPUSHL $_" + $1);
+      }
+    | ID '.' ID {
+          /* Campo de struct (ex: p1.x) */
+          String id_var = $1;
+          String id_campo = $3;
+          
+          TS_entry nodo_var = ts.pesquisa(id_var);
+          if (nodo_var == null) yyerror("(sem) variavel >" + id_var + "< nao declarada");
+          
+          TS_entry nodo_tipo = ts.pesquisaTipo(nodo_var.getTipoStruct());
+          if (nodo_tipo == null) yyerror("(sem) tipo >" + nodo_var.getTipoStruct() + "< nao eh um struct");
+          
+          TS_entry nodo_campo = nodo_tipo.getCampo(id_campo);
+          if (nodo_campo == null) yyerror("(sem) campo >" + id_campo + "< nao existe no struct " + nodo_tipo.id);
+          
+          /* GERA CÓDIGO: (base + offset) */
+          System.out.println("\tMOVL $_" + id_var + ", %EAX");
+          System.out.println("\tADDL $" + nodo_campo.getOffset() + ", %EAX");
+          System.out.println("\tPUSHL %EAX");
+      }
+    /* * array (ex: v[i]) */
+    | ID '[' exp ']' {
+          String id_var = $1;
+          
+          TS_entry nodo_var = ts.pesquisa(id_var);
+          if (nodo_var == null) yyerror("(sem) array >" + id_var + "< nao declarado");
+          if (nodo_var.getTipo() != Parser.ARRAY) yyerror("(sem) >" + id_var + "< nao eh um array");
+
+          /* GERA CÓDIGO: (base + (indice * 4)) */
+          System.out.println("\tPOPL %EAX");     // EAX = indice (da 'exp')
+          System.out.println("\tIMULL $4, %EAX");  // EAX = indice * 4
+          System.out.println("\tADDL $_" + id_var + ", %EAX"); // EAX = _v + (indice * 4)
+          System.out.println("\tPUSHL %EAX");    // Empilha o endereço final
+      }
+	  /* * acesso a array DENTRO de struct (ex: p1.notas[i]) */
+    | ID '.' ID '[' exp ']' {
+          TS_entry nodo_var = ts.pesquisa($1); // p1
+          if (nodo_var == null) yyerror("(sem) variavel >" + $1 + "< nao declarada");
+          TS_entry nodo_tipo = ts.pesquisaTipo(nodo_var.getTipoStruct()); // tipo de p1
+          if (nodo_tipo == null) yyerror("(sem) tipo >" + nodo_var.getTipoStruct() + "< nao eh um struct");
+          TS_entry nodo_campo = nodo_tipo.getCampo($3); // notas
+          if (nodo_campo == null) yyerror("(sem) campo >" + $3 + "< nao existe");
+          if (nodo_campo.getTipo() != Parser.ARRAY) yyerror("(sem) campo >" + $3 + "< nao eh um array");
+
+          System.out.println("\tPOPL %EAX"); // EAX = indice (da exp)
+          System.out.println("\tIMULL $" + nodo_campo.getTamanhoElemento() + ", %EAX"); // EAX = indice * 4
+          
+          System.out.println("\tMOVL $_" + $1 + ", %EDX"); // EDX = end base (p1)
+          System.out.println("\tADDL $" + nodo_campo.getOffset() + ", %EDX"); // EDX = end base + offset 
+          
+          System.out.println("\tADDL %EDX, %EAX"); // EAX = (p1+offset_notas) + (indice*4)
+          System.out.println("\tPUSHL %EAX");
+      }
+    /* * acesso a struct entro de array (ex: lista[i].x) */
+    | ID '[' exp ']' '.' ID {
+          TS_entry nodo_var = ts.pesquisa($1); // lista
+          if (nodo_var == null) yyerror("(sem) array >" + $1 + "< nao declarado");
+          if (nodo_var.getTipo() != Parser.ARRAY) yyerror("(sem) >" + $1 + "< nao eh um array");
+          
+          TS_entry nodo_tipo = ts.pesquisaTipo(nodo_var.getTipoStruct()); // Ponto
+          if (nodo_tipo == null) yyerror("(sem) tipo base >" + nodo_var.getTipoStruct() + "< nao eh struct");
+          
+          TS_entry nodo_campo = nodo_tipo.getCampo($6); // x
+          if (nodo_campo == null) yyerror("(sem) campo >" + $6 + "< nao existe");
+          
+          int tamanho_struct = nodo_var.getTamanhoElemento();
+          int offset_campo = nodo_campo.getOffset();
+
+          System.out.println("\tPOPL %EAX"); // EAX = indice (da exp)
+          System.out.println("\tIMULL $" + tamanho_struct + ", %EAX"); // EAX = indice * tam_struct
+          
+          System.out.println("\tADDL $_" + $1 + ", %EAX"); // EAX = _lista + (indice * tam_struct)
+          
+          System.out.println("\tADDL $" + offset_campo + ", %EAX"); // EAX = (base + ... ) + offset_x
+          System.out.println("\tPUSHL %EAX");
+      	}
+;
+
+
+/* Se a expressão for vazia, empilha 'true' (1) para criar um loop infinito.*/
+for_cond_opt : exp
+             | /* Vazio */ { System.out.println("\tPUSHL $1"); }
+             ;				
 
 %%
 
@@ -176,6 +531,8 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
 
   private Stack<Integer> pRot = new Stack<Integer>();
   private int proxRot = 1;
+  private Stack<Integer> pLoopBreak = new Stack<Integer>();
+  private Stack<Integer> pLoopContinue = new Stack<Integer>();
 
 
   public static int ARRAY = 100;
@@ -298,7 +655,7 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
 	}
 
    private void geraInicio() {
-			System.out.println(".text\n\n#\t nome COMPLETO e matricula dos componentes do grupo...\n#\n"); 
+			System.out.println(".text\n\n#\t Bernardo Klein Heitz, João Pedro Aiolfi de Figueiredo, Lucas Teixeira Brenner e Lucas Langer Lantmann \n#\n"); 
 			System.out.println(".GLOBL _start\n\n");  
    }
 
@@ -415,4 +772,3 @@ exp :  NUM  { System.out.println("\tPUSHL $"+$1); }
 	           System.out.println("_str_"+i+"Len = . - _str_"+i);  
 	      }		
    }
-   

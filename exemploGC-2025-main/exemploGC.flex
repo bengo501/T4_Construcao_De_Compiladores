@@ -55,6 +55,7 @@ NL  = \n | \r | \r\n
 "{" |
 "}" |
 "," |
+"." |
 "\[" | 
 "\]"    { return (int) yycharat(0); }
 
@@ -89,11 +90,10 @@ break   { return Parser.BREAK; }
 continue { return Parser.CONTINUE; }
 struct  { return Parser.STRUCT; }
 
+\"[^\n]+\" { yyparser.yylval = new ParserVal(yytext().substring(1, yylength() -1));
+	     return Parser.LIT; }
 
 [a-zA-Z]+([a-zA-Z0-9]+)? { yyparser.yylval = new ParserVal(yytext());
             return Parser.ID; }
-
-\"[^\n]+\" { yyparser.yylval = new ParserVal(yytext().substring(1, yylength() -1));
-	     return Parser.LIT; }
 
 [^]    { System.err.println("Error: unexpected character '"+yytext()+"'"); return -1; }

@@ -1,0 +1,48 @@
+
+struct Ponto {
+    int x;
+    int y;
+};
+
+struct Aluno {
+    int matricula;
+    int notas[2];
+};
+
+Ponto lista[3];
+int i;
+Aluno a1;
+
+void main() {
+    
+    write("Caso 1: Array de Structs\n");
+    
+    lista[0].x = 11;
+    lista[0].y = 22;
+    lista[1].x = 33;
+    
+    write("Valores atribuidos:\n");
+    write("lista[0].x = ", lista[0].x);
+    write("lista[0].y = ", lista[0].y);
+    write("lista[1].x = ", lista[1].x);
+    
+    i = 0;
+    for (i = 0; i < 3; i = i + 1) {
+        lista[i].y = i * 100;
+    }
+
+    write("Valores do loop (y):\n");
+    write("lista[0].y = ", lista[0].y);
+    write("lista[1].y = ", lista[1].y);
+    write("lista[2].y = ", lista[2].y);
+
+    write("\nCaso 2: Struct com Array\n");
+    
+    a1.matricula = 999;
+    a1.notas[0] = 10;
+    a1.notas[1] = 8;
+    
+    write("Aluno matricula: ", a1.matricula);
+    write("Aluno nota 0: ", a1.notas[0]);
+    write("Aluno nota 1: ", a1.notas[1]);
+}

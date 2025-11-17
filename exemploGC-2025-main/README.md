@@ -4,14 +4,19 @@
 Bernardo Klein, João Pedro Aiolfi, Lucas Brenner e Lucas Lantmann
 
 ## Como Rodar o projeto:
-make clean
+
+cd ./exemploGC-2025-main
+
 chmod +x ./yacc.linux
+
+make clean
+
 make
-java Parser collatz.cmm > collatz.s
 
-sudo apt-get update && sudo apt-get install -y gcc-multilib
+python3 testes/testar.py
 
-gcc -m32 -o collatz collatz.s
+### Execução de Testes:
 
-./collatz
-
+make clean
+make
+python3 testes/testar.py

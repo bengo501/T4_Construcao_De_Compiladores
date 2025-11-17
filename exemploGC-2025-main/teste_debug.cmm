@@ -1,0 +1,39 @@
+int a;
+int b;
+int c;
+int ma;
+int me;
+int i;
+
+void main() {
+    write("--- DEBUG INICIADO ---");
+
+    write("> Teste 1: FOR Loop (i=1 a 3)");
+    for (i=1; i<=3; i++)
+        write("i: ", i);
+
+    a = 10;
+    b = 11;
+    c = 9;
+
+    me = a<=b && a<=c ? a : b <= c ? b : c;
+    ma = a>=b && a>=c ? a : b >= c ? b : c;
+
+    write("> Teste 2: Ternario Aninhado");
+    write("a: ", a);
+    write("b: ", b);
+    write("c: ", c);
+    write("Minimo (me): ", me);
+    write("Maximo (ma): ", ma);
+
+    a = b = c = 1;
+    a += b += c += 5;
+    
+    write("> Teste 3: Atribuicao Composta");
+    write("a: ", a);
+    write("b: ", b);
+    write("c: ", c);
+    write("");
+
+    write("--- DEBUG CONCLUIDO ---");
+}
